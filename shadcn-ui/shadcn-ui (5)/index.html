@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="https://public-frontend-cos.metadl.com/mgx/img/favicon.png" type="image/png">
+  <title>ProofModePro</title>
+  <meta name="description" content="Revolutionizing skill verification with AI-powered assessments and blockchain-secured TrustTags" />
+  <meta name="author" content="ProofModePro" />
+
+  <meta property="og:title" content="ProofModePro" />
+  <meta property="og:description" content="Revolutionizing skill verification with AI-powered assessments and blockchain-secured TrustTags" />
+  <meta property="og:type" content="website" />
+
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+  <script type="module">
+    import memberstackDOM from '@memberstack/dom';
+    const memberstack = memberstackDOM.init({
+      domain: "https://memberstack-client.proofmodepro.com",
+      publicKey: "pk_ede9ec7e19a0640c0bba",
+    });
+    window.memberstack = memberstack;
+  </script>
+</body>
+
+</html>
