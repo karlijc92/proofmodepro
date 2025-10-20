@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, FileText, Brain, Award, Users, User, Handshake } from 'lucide-react';
+import { ArrowRight, FileText, Award, Users, User, UserPlus, Handshake } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Hero() {
@@ -45,10 +45,6 @@ export default function Hero() {
             <span className="font-medium text-gray-700">Upload Work Samples</span>
           </div>
           <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 shadow-sm border border-gray-200">
-            <Brain className="w-5 h-5 text-indigo-600" />
-            <span className="font-medium text-gray-700">AI Assessment</span>
-          </div>
-          <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 shadow-sm border border-gray-200">
             <Award className="w-5 h-5 text-green-600" />
             <span className="font-medium text-gray-700">Earn TrustTag™</span>
           </div>
@@ -56,29 +52,37 @@ export default function Hero() {
 
         {/* Main CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6 animate-in fade-in slide-in-from-bottom duration-700 delay-800">
-          <Link to="/create-trust-tag">
+          <Link to="/signup">
             <Button 
               size="lg" 
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
             >
-              Create Your TrustTag
+              <UserPlus className="mr-2 w-5 h-5" />
+              Sign Up
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </Link>
-          <Link to="/profile">
+          <Link to="/login">
             <Button 
               variant="outline"
               size="lg" 
               className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-4 text-lg font-semibold transition-all duration-300"
             >
               <User className="mr-2 w-5 h-5" />
-              My Profile
+              Login
             </Button>
           </Link>
         </div>
 
+        {/* Tertiary Link */}
+        <div className="flex justify-center mb-6 animate-in fade-in slide-in-from-bottom duration-700 delay-900">
+          <Link to="/verify" className="text-blue-600 hover:text-blue-700 font-medium underline underline-offset-4 transition-colors">
+            Verify a TrustTag
+          </Link>
+        </div>
+
         {/* Partnership Button */}
-        <div className="flex justify-center mb-12 animate-in fade-in slide-in-from-bottom duration-700 delay-900">
+        <div className="flex justify-center mb-12 animate-in fade-in slide-in-from-bottom duration-700 delay-1000">
           <Link to="/partnership">
             <Button 
               variant="ghost"
@@ -91,7 +95,7 @@ export default function Hero() {
         </div>
 
         {/* Professional Trust Statement */}
-        <div className="mt-12 animate-in fade-in slide-in-from-bottom duration-700 delay-1000">
+        <div className="mt-12 animate-in fade-in slide-in-from-bottom duration-700 delay-1100">
           <p className="text-gray-600 text-sm mb-4">
             Perfect for freelancers, skilled workers, professionals without formal credentials, 
             immigrants, refugees, and anyone looking to showcase their real-world abilities

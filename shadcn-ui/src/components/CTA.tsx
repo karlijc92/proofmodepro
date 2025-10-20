@@ -75,7 +75,10 @@ export default function CTA() {
             </CardHeader>
             <CardContent className="text-center">
               <Link to="/partnership">
-                <Button variant="outline" className="border-white/30 text-white hover:bg-white hover:text-blue-600">
+                <Button 
+                  variant="outline" 
+                  className="border-2 border-blue-300 bg-blue-600/20 text-blue-100 hover:bg-blue-500 hover:text-white hover:border-blue-400 transition-all duration-300"
+                >
                   Learn More
                 </Button>
               </Link>
@@ -92,7 +95,10 @@ export default function CTA() {
             </CardHeader>
             <CardContent className="text-center">
               <Link to="/partnership">
-                <Button variant="outline" className="border-white/30 text-white hover:bg-white hover:text-blue-600">
+                <Button 
+                  variant="outline" 
+                  className="border-2 border-indigo-300 bg-indigo-600/20 text-indigo-100 hover:bg-indigo-500 hover:text-white hover:border-indigo-400 transition-all duration-300"
+                >
                   Partner With Us
                 </Button>
               </Link>
@@ -109,7 +115,10 @@ export default function CTA() {
             </CardHeader>
             <CardContent className="text-center">
               <Link to="/partnership">
-                <Button variant="outline" className="border-white/30 text-white hover:bg-white hover:text-blue-600">
+                <Button 
+                  variant="outline" 
+                  className="border-2 border-purple-300 bg-purple-600/20 text-purple-100 hover:bg-purple-500 hover:text-white hover:border-purple-400 transition-all duration-300"
+                >
                   Get Started
                 </Button>
               </Link>
