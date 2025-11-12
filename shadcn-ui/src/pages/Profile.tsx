@@ -108,85 +108,92 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex flex-col">
-      <Navigation />
-      <main className="flex-grow container mx-auto px-6 py-12">
-        <div className="max-w-4xl mx-auto">
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="text-3xl">My Profile</CardTitle>
-              {auth.currentUser ? (
-                <CardDescription>
-                  Welcome, {auth.currentUser.email}! Manage your TrustTags and account details here.
-                </CardDescription>
-              ) : (
-                <CardDescription>
-                  Please log in to view your profile and TrustTags.
-                </CardDescription>
-              )}
-            </CardHeader>
-            {auth.currentUser && (
-              <CardContent>
-                <Button onClick={handleLogout} variant="outline">Log Out</Button>
-              </CardContent>
-            )}
-          </Card>
+  <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex flex-col">
+    <Navigation />
 
-          <div className="space-y-8">
-            <h2 className="text-2xl font-bold text-gray-800">My TrustTags</h2>
-            {isLoadingTags ? (
-              <div className="flex items-center justify-center p-8">
-                <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                <span>Loading your TrustTags...</span>
+    {/* GATED CONTENT: Only members on the ProofMode plan can see this */}
+    <main className="flex-grow container mx-auto px-6 py-12">
+      <div data-ms-content="proofmode-profile">
+        {/* ---- BEGIN: your existing profile UI ---- */}
+        <Card className="max-w-xl mx-auto">
+          <CardHeader>
+            <CardTitle className="text-3xl">My Profile</CardTitle>
+            <CardDescription>
+              {auth.currentUser?.email
+                ? `Welcome, ${auth.currentUser.email}! Manage your TrustTags and account details here.`
+                : `Loading your profile...`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={handleLogout} variant="outline">Log Out</Button>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-8 mt-10">
+          <h2 className="text-xl font-bold text-gray-800">My TrustTags</h2>
+
+          {isLoadingTags ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <span className="ml-2 text-lg">Loading your TrustTags...</span>
+            </div>
+          ) : trustTags.length > 0 ? (
+            trustTags.map((tag) => (
+              <Card key={tag.tagId} className="flex flex-row items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <ShieldCheck className="w-8 h-8 text-green-600" />
+                  <CardTitle>{tag.certificateType}</CardTitle>
+                </div>
+                <CardDescription>
+                  Issued: {tag.dateIssued} &nbsp;|&nbsp; ID: {tag.tagId}
+                </CardDescription>
+                <Button onClick={() => downloadCertificate(tag)} disabled={isDownloading === tag.tagId}>
+                  {isDownloading === tag.tagId ? 'Downloading...' : 'Download Certificate'}
+                </Button>
+              </Card>
+            ))
+          ) : (
+            <div className="text-center py-10 bg-white rounded-lg shadow-sm border border-dashed">
+              <AlertCircle className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-lg font-medium text-gray-900">No TrustTags Found</h3>
+              <p className="mt-1 text-sm text-gray-500">You have not been issued any TrustTags yet.</p>
+            </div>
+          )}
+
+          {/* Hidden certificates for PDF generation */}
+          <div className="absolute -left-[9999px] -top-[9999px]">
+            {trustTags.map((tag) => (
+              <div key={`cert-${tag.tagId}`} style={{ width: '1123px' }}>
+                <TrustTagCertificate
+                  ref={(el) => (certificateRefs.current[tag.tagId] = el)}
+                  fullName={tag.fullName}
+                  certificateType={tag.certificateType}
+                  tagId={tag.tagId}
+                  dateIssued={tag.dateIssued}
+                />
               </div>
-            ) : trustTags.length > 0 ? (
-              trustTags.map((tag) => (
-                <Card key={tag.id}>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <ShieldCheck className="w-8 h-8 text-green-600" />
-                      <div>
-                        <CardTitle>{tag.certificateType}</CardTitle>
-                        <CardDescription>Issued: {tag.dateIssued} | ID: {tag.tagId}</CardDescription>
-                      </div>
-                    </div>
-                    <Button 
-                      onClick={() => downloadCertificate(tag)}
-                      disabled={isDownloading === tag.tagId}
-                    >
-                      {isDownloading === tag.tagId && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      <Download className="mr-2 h-4 w-4" />
-                      {isDownloading === tag.tagId ? 'Downloading...' : 'Download Certificate'}
-                    </Button>
-                  </CardHeader>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center py-10 px-6 bg-white rounded-lg shadow-sm border border-dashed">
-                <AlertCircle className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-lg font-medium text-gray-900">No TrustTags Found</h3>
-                <p className="mt-1 text-sm text-gray-500">You have not been issued any TrustTags yet.</p>
-              </div>
-            )}
+            ))}
           </div>
         </div>
+        {/* ---- END: your existing profile UI ---- */}
+      </div>
 
-        {/* Hidden certificates for PDF generation */}
-        <div className="absolute -left-[9999px] -top-[9999px]">
-          {trustTags.map(tag => (
-            <div key={`cert-${tag.tagId}`} style={{ width: '1123px' }}>
-              <TrustTagCertificate
-                ref={el => certificateRefs.current[tag.tagId] = el}
-                fullName={tag.fullName}
-                certificateType={tag.certificateType}
-                tagId={tag.tagId}
-                dateIssued={tag.dateIssued}
-              />
-            </div>
-          ))}
-        </div>
-      </main>
-      <Footer />
-    </div>
-  );
-}
+      {/* FALLBACK: what logged-out visitors see */}
+      <div data-ms-content="!proofmode-profile" className="max-w-xl mx-auto mt-12 text-center">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Please log in to view your profile</CardTitle>
+            <CardDescription>Access to your TrustTags and account is for members only.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center justify-center gap-3">
+            <Button data-ms-modal="login">Log in</Button>
+            <Button data-ms-modal="signup" variant="outline">Create account</Button>
+          </CardContent>
+        </Card>
+      </div>
+    </main>
+
+    <Footer />
+  </div>
+);
+  )
