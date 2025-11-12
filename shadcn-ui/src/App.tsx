@@ -21,6 +21,7 @@ import AssessmentResultsPage from './pages/AssessmentResults';
 import { MemberstackProvider } from "@memberstack/react";
 
 
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -30,7 +31,9 @@ const App = () => (
       publicKey: "app_cmgb1v02d00bg0sss9fvt1nkb",
     }}
   >
-    <QueryClientProvider client={queryClient}>
+    <MemberstackProvider config={{ publicKey: "app_cmgb1v02d00bg0sss9fvt1nkb" }}>
+  <QueryClientProvider client={queryClient}>
+
       <TooltipProvider>
         <Toaster />
         <BrowserRouter>
@@ -56,6 +59,8 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+     </MemberstackProvider>
+
       </BrowserRouter>
     </TooltipProvider>
     </QueryClientProvider>
