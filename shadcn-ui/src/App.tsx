@@ -18,14 +18,23 @@ import Disclaimer from './pages/Disclaimer';
 import CreateTrustTagPage from './pages/CreateTrustTag';
 import AssessmentPage from './pages/Assessment';
 import AssessmentResultsPage from './pages/AssessmentResults';
+import { MemberstackProvider } from "@memberstack/react";
+
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <BrowserRouter>
+ const App = () => (
+  <MemberstackProvider
+    config={{
+      publicKey: "app_cmgb1v02d00bg0sss9fvt1nkb",
+    }}
+  >
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <BrowserRouter>
+
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/signup" element={<Signup />} />
@@ -47,6 +56,11 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+      </BrowserRouter>
+    </TooltipProvider>
+    </QueryClientProvider>
+  </MemberstackProvider>
+  
 );
 
 export default App;
