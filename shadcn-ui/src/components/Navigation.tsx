@@ -65,9 +65,9 @@ export default function Navigation() {
           </div>
 
           <nav className="flex items-center">
-            <Button variant="ghost" asChild>
-              <Link to="/login">Login</Link>
-            </Button>
+           <Button data-ms-modal="login" variant="ghost">Log in</Button>
+<Button data-ms-modal="signup" variant="outline">Sign up</Button>
+
             <Button asChild>
               <Link to="/signup">Sign Up</Link>
             </Button>
