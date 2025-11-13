@@ -61,10 +61,7 @@ const App = () => (
   </QueryClientProvider>
      </MemberstackProvider>
 
-      </BrowserRouter>
-    </TooltipProvider>
-    </QueryClientProvider>
-  </MemberstackProvider>
+   
   
 );
 
