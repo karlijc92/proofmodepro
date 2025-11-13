@@ -25,7 +25,7 @@ import { MemberstackProvider } from "@memberstack/react";
 const queryClient = new QueryClient();
 
 const App = () => (
- const App = () => (
+
   <MemberstackProvider
     config={{
       publicKey: "app_cmgb1v02d00bg0sss9fvt1nkb",
