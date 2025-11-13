@@ -59,10 +59,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-     </MemberstackProvider>
-
-   
-  
+     </MemberstackProvider> 
 );
 
 export default App;
