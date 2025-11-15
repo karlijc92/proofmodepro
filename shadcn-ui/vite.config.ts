@@ -16,4 +16,13 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Tell Vite/Rollup to ignore @memberstack/react completely
+  optimizeDeps: {
+    exclude: ["@memberstack/react"],
+  },
+  build: {
+    rollupOptions: {
+      external: ["@memberstack/react"],
+    },
+  },
 }));
