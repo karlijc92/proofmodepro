@@ -1,199 +1,185 @@
-import { useRef, useState, useEffect } from 'react';
-import { useMemberstack } from '@memberstack/react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-
-import Navigation from '@/components/Navigation';
-import Footer from '@/components/Footer';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Download, ShieldCheck, AlertCircle } from 'lucide-react';
-import TrustTagCertificate from '@/components/TrustTagCertificate';
-import { getTrustTagsByEmail } from '@/lib/airtable';
+import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Loader2, ShieldCheck, AlertCircle } from "lucide-react";
+import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
+import TrustTagCertificate from "@/components/TrustTagCertificate";
+import { auth } from "@/lib/memberstack";
+import { getTrustTagsByEmail } from "@/lib/airtable";
 
 interface TrustTag {
-  id: string;
-  fullName: string;
-  certificateType: string;
   tagId: string;
+  certificateType: string;
   dateIssued: string;
+  fullName: string;
 }
 
-export default function ProfilePage() {
-  const { auth, logout } = useMemberstack();
-  const { toast } = useToast();
-  const [isDownloading, setIsDownloading] = useState<string | null>(null);
+export default function Profile() {
+  const navigate = useNavigate();
   const [trustTags, setTrustTags] = useState<TrustTag[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(true);
-  const certificateRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const [isDownloading, setIsDownloading] = useState<string | null>(null);
+  const certificateRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const userEmail = auth.currentUser?.email || null;
 
   useEffect(() => {
-    const fetchTrustTags = async () => {
-      if (auth.currentUser?.email) {
-        try {
-          const tags = await getTrustTagsByEmail(auth.currentUser.email);
-          setTrustTags(tags);
-        } catch (error) {
-          console.error('Failed to fetch TrustTags:', error);
-          toast({
-            variant: 'destructive',
-            title: 'Failed to load your TrustTags.',
-            description: 'There was an issue connecting to the database. Please try refreshing the page.',
-          });
-        } finally {
-          setIsLoadingTags(false);
-        }
-      } else if (auth.isLoggedIn === false) {
+    if (!userEmail) return;
+
+    async function loadTrustTags() {
+      try {
+        const records = await getTrustTagsByEmail(userEmail);
+        setTrustTags(records || []);
+      } catch (err) {
+        console.error("Failed to load TrustTags", err);
+      } finally {
         setIsLoadingTags(false);
       }
-    };
+    }
 
-    fetchTrustTags();
-  }, [auth.currentUser, auth.isLoggedIn, toast]);
+    loadTrustTags();
+  }, [userEmail]);
 
   const handleLogout = async () => {
-    await logout();
-    toast({ title: 'Logged out successfully.' });
+    await auth.logout();
+    navigate("/");
   };
 
   const downloadCertificate = async (tag: TrustTag) => {
-    const certificateElement = certificateRefs.current[tag.tagId];
-    if (!certificateElement) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not find the certificate element to download.',
-      });
-      return;
-    }
-
     setIsDownloading(tag.tagId);
-
     try {
-      const canvas = await html2canvas(certificateElement, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'px',
-        format: [canvas.width, canvas.height],
-      });
+      const element = certificateRefs.current[tag.tagId];
+      if (!element) return;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      pdf.save(`ProofMode_TrustTag_${tag.tagId}.pdf`);
+      const html2pdf = (await import("html2pdf.js")).default;
+      await html2pdf().from(element).save(`TrustTag-${tag.tagId}.pdf`);
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Download Failed',
-        description: 'There was an error generating your certificate PDF.',
-      });
+      console.error("Certificate download failed", error);
     } finally {
       setIsDownloading(null);
     }
   };
 
-  if (!auth.currentUser && auth.isLoggedIn) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        <p className="ml-4 text-lg">Loading your profile...</p>
-      </div>
-    );
-  }
-
   return (
-  <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex flex-col">
-    <Navigation />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex flex-col">
+      <Navigation />
 
-    {/* GATED CONTENT: Only members on the ProofMode plan can see this */}
-    <main className="flex-grow container mx-auto px-6 py-12">
-      <div data-ms-content="proofmode-profile">
-        {/* ---- BEGIN: your existing profile UI ---- */}
-        <Card className="max-w-xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-3xl">My Profile</CardTitle>
-            <CardDescription>
-              {auth.currentUser?.email
-                ? `Welcome, ${auth.currentUser.email}! Manage your TrustTags and account details here.`
-                : `Loading your profile...`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={handleLogout} variant="outline">Log Out</Button>
-          </CardContent>
-        </Card>
+      <main className="flex-grow container mx-auto px-6 py-12">
+        {/* LOGGED IN VIEW */}
+        <div data-ms-content="proofmode-profile">
+          <Card className="max-w-xl mx-auto">
+            <CardHeader>
+              <CardTitle className="text-3xl">My Profile</CardTitle>
+              <CardDescription>
+                {userEmail
+                  ? `Logged in as ${userEmail}`
+                  : "Loading your profile..."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={handleLogout} variant="outline">
+                Log Out
+              </Button>
+            </CardContent>
+          </Card>
 
-        <div className="space-y-8 mt-10">
-          <h2 className="text-xl font-bold text-gray-800">My TrustTags</h2>
+          <div className="space-y-8 mt-10">
+            <h2 className="text-xl font-bold text-gray-800">My TrustTags</h2>
 
-          {isLoadingTags ? (
-            <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
-              <span className="ml-2 text-lg">Loading your TrustTags...</span>
-            </div>
-          ) : trustTags.length > 0 ? (
-            trustTags.map((tag) => (
-              <Card key={tag.tagId} className="flex flex-row items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <ShieldCheck className="w-8 h-8 text-green-600" />
-                  <CardTitle>{tag.certificateType}</CardTitle>
-                </div>
-                <CardDescription>
-                  Issued: {tag.dateIssued} &nbsp;|&nbsp; ID: {tag.tagId}
-                </CardDescription>
-                <Button onClick={() => downloadCertificate(tag)} disabled={isDownloading === tag.tagId}>
-                  {isDownloading === tag.tagId ? 'Downloading...' : 'Download Certificate'}
-                </Button>
-              </Card>
-            ))
-          ) : (
-            <div className="text-center py-10 bg-white rounded-lg shadow-sm border border-dashed">
-              <AlertCircle className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-lg font-medium text-gray-900">No TrustTags Found</h3>
-              <p className="mt-1 text-sm text-gray-500">You have not been issued any TrustTags yet.</p>
-            </div>
-          )}
-
-          {/* Hidden certificates for PDF generation */}
-          <div className="absolute -left-[9999px] -top-[9999px]">
-            {trustTags.map((tag) => (
-              <div key={`cert-${tag.tagId}`} style={{ width: '1123px' }}>
-                <TrustTagCertificate
-                  ref={(el) => (certificateRefs.current[tag.tagId] = el)}
-                  fullName={tag.fullName}
-                  certificateType={tag.certificateType}
-                  tagId={tag.tagId}
-                  dateIssued={tag.dateIssued}
-                />
+            {isLoadingTags ? (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <span className="ml-2 text-lg">Loading TrustTags...</span>
               </div>
-            ))}
+            ) : trustTags.length > 0 ? (
+              trustTags.map((tag) => (
+                <Card
+                  key={tag.tagId}
+                  className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+                >
+                  <div className="flex items-center space-x-3">
+                    <ShieldCheck className="w-8 h-8 text-green-600" />
+                    <CardTitle>{tag.certificateType}</CardTitle>
+                  </div>
+
+                  <CardDescription>
+                    Issued: {tag.dateIssued} | ID: {tag.tagId}
+                  </CardDescription>
+
+                  <Button
+                    onClick={() => downloadCertificate(tag)}
+                    disabled={isDownloading === tag.tagId}
+                  >
+                    {isDownloading === tag.tagId
+                      ? "Downloading..."
+                      : "Download"}
+                  </Button>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-10 bg-white rounded-lg shadow-sm border border-dashed">
+                <AlertCircle className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-lg font-medium">
+                  No TrustTags yet
+                </h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Once your verification is approved, it will appear here.
+                </p>
+              </div>
+            )}
+
+            {/* Hidden certificate render targets */}
+            <div className="absolute -left-[9999px] -top-[9999px]">
+              {trustTags.map((tag) => (
+                <div key={tag.tagId} style={{ width: "1123px" }}>
+                  <TrustTagCertificate
+                    ref={(el) =>
+                      (certificateRefs.current[tag.tagId] = el)
+                    }
+                    fullName={tag.fullName}
+                    certificateType={tag.certificateType}
+                    tagId={tag.tagId}
+                    dateIssued={tag.dateIssued}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-        {/* ---- END: your existing profile UI ---- */}
-      </div>
 
-      {/* FALLBACK: what logged-out visitors see */}
-      <div data-ms-content="!proofmode-profile" className="max-w-xl mx-auto mt-12 text-center">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Please log in to view your profile</CardTitle>
-            <CardDescription>Access to your TrustTags and account is for members only.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex items-center justify-center gap-3">
-            <Button data-ms-modal="login">Log in</Button>
-            <Button data-ms-modal="signup" variant="outline">Create account</Button>
-          </CardContent>
-        </Card>
-      </div>
-    </main>
+        {/* LOGGED OUT VIEW */}
+        <div
+          data-ms-content="!proofmode-profile"
+          className="max-w-xl mx-auto mt-12 text-center"
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">
+                Log in to access your profile
+              </CardTitle>
+              <CardDescription>
+                Your TrustTags and verification status live here.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center gap-4">
+              <Button data-ms-modal="login">Log In</Button>
+              <Button data-ms-modal="signup" variant="outline">
+                Sign Up
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
 
-    <Footer />
-  </div>
-);
-  )
+      <Footer />
+    </div>
+  );
+}
