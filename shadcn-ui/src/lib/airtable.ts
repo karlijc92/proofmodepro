@@ -1,46 +1,30 @@
-import Airtable from 'airtable';
+export type TrustTag = {
+  id: string;
+  fullName: string;
+  certificateType: string;
+  tagId: string;
+  dateIssued: string;
+  status?: string;
+};
 
-// Ensure your .env file has VITE_AIRTABLE_API_KEY and VITE_AIRTABLE_BASE_ID
-const airtable = new Airtable({
-  apiKey: import.meta.env.VITE_AIRTABLE_API_KEY,
-}).base(import.meta.env.VITE_AIRTABLE_BASE_ID as string);
+export async function getTrustTagsByEmail(email: string): Promise<TrustTag[]> {
+  const safeEmail = email.trim();
+  if (!safeEmail) return [];
 
-const trustTagsTable = airtable('TrustTags');
+  const res = await fetch(
+    `/api/trusttags-by-email?email=${encodeURIComponent(safeEmail)}`
+  );
 
-export const getTrustTagById = async (tagId: string) => {
-  const records = await trustTagsTable
-    .select({
-      maxRecords: 1,
-      filterByFormula: `{Tag ID} = '${tagId}'`,
-    })
-    .firstPage();
-
-  if (records.length > 0) {
-    const record = records[0];
-    return {
-      id: record.id,
-      fullName: record.fields['Full Name'],
-      certificateType: record.fields['Certificate Type'],
-      status: record.fields['Status'],
-      dateIssued: record.fields['Date Issued'],
-    };
+  if (!res.ok) {
+    console.error("Failed to fetch TrustTags:", res.status);
+    return [];
   }
-  return null;
-};
 
-export const getTrustTagsByEmail = async (email: string) => {
-  const records = await trustTagsTable
-    .select({
-      filterByFormula: `LOWER({Email}) = LOWER('${email}')`,
-      sort: [{ field: 'Date Issued', direction: 'desc' }],
-    })
-    .all();
+  const data = await res.json();
+  return (data?.trustTags as TrustTag[]) || [];
+}
 
-  return records.map((record) => ({
-    id: record.id,
-    fullName: record.fields['Full Name'] as string,
-    certificateType: record.fields['Certificate Type'] as string,
-    tagId: record.fields['Tag ID'] as string,
-    dateIssued: record.fields['Date Issued'] as string,
-  }));
-};
+// Optional placeholder so imports elsewhere don't break (we'll wire this next)
+export async function getTrustTagById(_tagId: string) {
+  throw new Error("getTrustTagById not wired yet. We'll add server API next.");
+}
