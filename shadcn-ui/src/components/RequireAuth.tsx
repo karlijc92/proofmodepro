@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, Navigate } from "react-router-dom";
 
-// NOTE: adjust this import to whatever you use to initialize Memberstack
-// Common options:
-//   import memberstack from "@memberstack/react";  (older patterns vary)
-//   import MemberstackDOM from "@memberstack/dom";
-// We will fix this precisely in the next step if your project uses a different one.
-
 declare global {
   interface Window {
     MemberStack?: any;
@@ -20,29 +14,45 @@ export default function RequireAuth({ children }: { children: JSX.Element }) {
   useEffect(() => {
     let cancelled = false;
 
-    async function check() {
+    async function checkAuth() {
       try {
-        // Memberstack DOM v2 exposes window.MemberStack once the script loads
         const ms = window.MemberStack;
 
-        // If Memberstack isn't loaded yet, treat as not authed
+        // If Memberstack hasn't loaded, treat as not logged in
         if (!ms) {
           if (!cancelled) setStatus("nope");
           return;
         }
 
-        // Many setups support: ms.getCurrentMember()
-        const member = await ms.getCurrentMember?.();
+        // Try the most common Memberstack session calls (different versions expose different methods)
+        const tryFns = [
+          ms.getCurrentMember,
+          ms.getMemberJSON,
+          ms.getMember,
+          ms.member,
+        ].filter(Boolean);
 
-        if (!cancelled) {
-          setStatus(member ? "authed" : "nope");
+        for (const fn of tryFns) {
+          try {
+            const result = typeof fn === "function" ? await fn() : fn;
+            // Memberstack often returns { data: { ...member } } or a member object directly
+            const member = result?.data ?? result;
+            if (member && (member.id || member.email)) {
+              if (!cancelled) setStatus("authed");
+              return;
+            }
+          } catch {
+            // keep trying next method
+          }
         }
+
+        if (!cancelled) setStatus("nope");
       } catch {
         if (!cancelled) setStatus("nope");
       }
     }
 
-    check();
+    checkAuth();
     return () => {
       cancelled = true;
     };
