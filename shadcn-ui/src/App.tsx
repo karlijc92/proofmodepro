@@ -20,6 +20,8 @@ import CreateTrustTagPage from "./pages/CreateTrustTag";
 import AssessmentPage from "./pages/Assessment";
 import AssessmentResultsPage from "./pages/AssessmentResults";
 
+import RequireAuth from "./components/RequireAuth";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -31,7 +33,17 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/profile" element={<Profile />} />
+
+          {/* PROTECTED */}
+          <Route
+            path="/profile"
+            element={
+              <RequireAuth>
+                <Profile />
+              </RequireAuth>
+            }
+          />
+
           <Route path="/verify" element={<Verify />} />
           <Route path="/partnership" element={<Partnership />} />
           <Route path="/pricing" element={<Pricing />} />
@@ -46,6 +58,7 @@ const App = () => (
             path="/assessment/:id/results"
             element={<AssessmentResultsPage />}
           />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
