@@ -1,13 +1,78 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogIn } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import Footer from '@/components/Footer';
-import BackButton from '@/components/BackButton';
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { LogIn } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import Footer from "@/components/Footer";
+import BackButton from "@/components/BackButton";
+
+declare global {
+  interface Window {
+    MemberStack?: any;
+  }
+}
 
 export default function Login() {
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // If user was redirected here from a protected page, go back there after login
+  const fromPath =
+    (location.state as any)?.from?.pathname && typeof (location.state as any)?.from?.pathname === "string"
+      ? (location.state as any).from.pathname
+      : "/profile";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkAlreadyLoggedIn() {
+      try {
+        const ms = window.MemberStack;
+        if (!ms) return;
+
+        const tryFns = [
+          ms.getCurrentMember,
+          ms.getMemberJSON,
+          ms.getMember,
+          ms.member,
+        ].filter(Boolean);
+
+        for (const fn of tryFns) {
+          try {
+            const result = typeof fn === "function" ? await fn() : fn;
+            const member = result?.data ?? result;
+
+            if (member && (member.id || member.email)) {
+              if (!cancelled) navigate(fromPath, { replace: true });
+              return;
+            }
+          } catch {
+            // keep trying
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // Check once on load; if already logged in, bounce them out of /login
+    checkAlreadyLoggedIn();
+
+    // Also check again after a short delay (covers the moment right after modal login)
+    const t = setTimeout(checkAlreadyLoggedIn, 1200);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [navigate, fromPath]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -20,7 +85,9 @@ export default function Login() {
 
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Welcome Back
+            </h1>
             <p className="text-gray-600">Sign in to your TrustTag account</p>
           </div>
 
@@ -51,8 +118,11 @@ export default function Login() {
               </Button>
 
               <div className="text-center text-sm text-gray-600">
-                Don't have an account?{' '}
-                <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-medium">
+                Don't have an account?{" "}
+                <Link
+                  to="/signup"
+                  className="text-blue-600 hover:text-blue-700 font-medium"
+                >
                   Create one here
                 </Link>
               </div>
