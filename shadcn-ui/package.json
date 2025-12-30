@@ -17,6 +17,7 @@
     "clsx": "^2.0.0",
     "lucide-react": "^0.400.0",
     "react-hook-form": "^7.51.5",
+    "react-qr-code": "^2.0.12",
     "tailwind-merge": "^2.0.0",
     "tailwindcss-animate": "^1.0.0"
   },
