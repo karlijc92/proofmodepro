@@ -1,15 +1,15 @@
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, ShieldCheck } from 'lucide-react';
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu, ShieldCheck } from "lucide-react";
 
 export default function Navigation() {
   const navLinks = [
-    { href: '/pricing', label: 'Pricing' },
-    { href: '/create-trust-tag', label: 'Create a TrustTag' },
-    { href: '/partnership', label: 'For Partners' },
-    { href: '/verify', label: 'Verify a TrustTag' },
-    { href: '/contact', label: 'Contact' },
+    { href: "/pricing", label: "Pricing" },
+    { href: "/create-trust-tag", label: "Create a TrustTag" },
+    { href: "/partnership", label: "For Partners" },
+    { href: "/verify", label: "Verify a TrustTag" },
+    { href: "/contact", label: "Contact" },
   ];
 
   return (
@@ -20,6 +20,7 @@ export default function Navigation() {
             <ShieldCheck className="h-6 w-6 text-primary" />
             <span className="hidden font-bold sm:inline-block">ProofMode</span>
           </Link>
+
           <nav className="flex items-center space-x-6 text-sm font-medium">
             {navLinks.map((link) => (
               <Link
@@ -42,11 +43,13 @@ export default function Navigation() {
                   <span className="sr-only">Toggle Menu</span>
                 </Button>
               </SheetTrigger>
+
               <SheetContent side="left" className="pr-0">
                 <Link to="/" className="flex items-center space-x-2">
                   <ShieldCheck className="h-6 w-6 text-primary" />
                   <span className="font-bold">ProofMode</span>
                 </Link>
+
                 <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
                   <div className="flex flex-col space-y-3">
                     {navLinks.map((link) => (
@@ -59,17 +62,28 @@ export default function Navigation() {
                       </Link>
                     ))}
                   </div>
+
+                  {/* Member actions (mobile) */}
+                  <div className="mt-6 flex flex-col gap-2 pr-6">
+                    <Button data-ms-modal="LOGIN" variant="ghost">
+                      Log in
+                    </Button>
+                    <Button data-ms-modal="SIGNUP" variant="outline">
+                      Sign up
+                    </Button>
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>
           </div>
 
-          <nav className="flex items-center">
-           <Button data-ms-modal="login" variant="ghost">Log in</Button>
-<Button data-ms-modal="signup" variant="outline">Sign up</Button>
-
-            <Button asChild>
-              <Link to="/signup">Sign Up</Link>
+          {/* Member actions (desktop) */}
+          <nav className="flex items-center gap-2">
+            <Button data-ms-modal="LOGIN" variant="ghost">
+              Log in
+            </Button>
+            <Button data-ms-modal="SIGNUP" variant="outline">
+              Sign up
             </Button>
           </nav>
         </div>
