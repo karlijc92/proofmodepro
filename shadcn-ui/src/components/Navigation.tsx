@@ -65,12 +65,21 @@ export default function Navigation() {
 
                   {/* Member actions (mobile) */}
                   <div className="mt-6 flex flex-col gap-2 pr-6">
-                    <Button data-ms-modal="login" variant="ghost">
+                    <a
+                      href="#"
+                      data-ms-modal="login"
+                      className="inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium border border-transparent hover:bg-accent"
+                    >
                       Log in
-                    </Button>
-                    <Button data-ms-modal="signup" variant="outline">
+                    </a>
+
+                    <a
+                      href="#"
+                      data-ms-modal="signup"
+                      className="inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium border hover:bg-accent"
+                    >
                       Sign up
-                    </Button>
+                    </a>
                   </div>
                 </div>
               </SheetContent>
@@ -79,12 +88,21 @@ export default function Navigation() {
 
           {/* Member actions (desktop) */}
           <nav className="flex items-center gap-2">
-            <Button data-ms-modal="login" variant="ghost">
+            <a
+              href="#"
+              data-ms-modal="login"
+              className="inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium hover:bg-accent"
+            >
               Log in
-            </Button>
-            <Button data-ms-modal="signup" variant="outline">
+            </a>
+
+            <a
+              href="#"
+              data-ms-modal="signup"
+              className="inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium hover:bg-accent"
+            >
               Sign up
-            </Button>
+            </a>
           </nav>
         </div>
       </div>
