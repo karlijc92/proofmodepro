@@ -65,10 +65,10 @@ export default function Navigation() {
 
                   {/* Member actions (mobile) */}
                   <div className="mt-6 flex flex-col gap-2 pr-6">
-                    <Button data-ms-modal="LOGIN" variant="ghost">
+                    <Button data-ms-modal="login" variant="ghost">
                       Log in
                     </Button>
-                    <Button data-ms-modal="SIGNUP" variant="outline">
+                    <Button data-ms-modal="signup" variant="outline">
                       Sign up
                     </Button>
                   </div>
@@ -79,10 +79,10 @@ export default function Navigation() {
 
           {/* Member actions (desktop) */}
           <nav className="flex items-center gap-2">
-            <Button data-ms-modal="LOGIN" variant="ghost">
+            <Button data-ms-modal="login" variant="ghost">
               Log in
             </Button>
-            <Button data-ms-modal="SIGNUP" variant="outline">
+            <Button data-ms-modal="signup" variant="outline">
               Sign up
             </Button>
           </nav>
