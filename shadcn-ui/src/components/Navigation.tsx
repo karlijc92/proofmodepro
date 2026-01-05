@@ -1,7 +1,14 @@
+import React, { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, ShieldCheck } from "lucide-react";
+
+declare global {
+  interface Window {
+    MemberStack?: any;
+  }
+}
 
 export default function Navigation() {
   const navLinks = [
@@ -12,9 +19,47 @@ export default function Navigation() {
     { href: "/contact", label: "Contact" },
   ];
 
+  // Hidden anchors Memberstack listens to (most reliable trigger)
+  const loginLinkRef = useRef<HTMLAnchorElement | null>(null);
+  const signupLinkRef = useRef<HTMLAnchorElement | null>(null);
+
+  const openLogin = () => {
+    // If Memberstack JS API exists, try it first
+    try {
+      if (window.MemberStack?.openModal) {
+        window.MemberStack.openModal("LOGIN");
+        return;
+      }
+    } catch {
+      // ignore
+    }
+    // Fallback: click hidden trigger
+    loginLinkRef.current?.click();
+  };
+
+  const openSignup = () => {
+    try {
+      if (window.MemberStack?.openModal) {
+        window.MemberStack.openModal("SIGNUP");
+        return;
+      }
+    } catch {
+      // ignore
+    }
+    signupLinkRef.current?.click();
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
+        {/* Hidden Memberstack modal triggers */}
+        <a ref={loginLinkRef} data-ms-modal="login" style={{ display: "none" }}>
+          hidden-login
+        </a>
+        <a ref={signupLinkRef} data-ms-modal="signup" style={{ display: "none" }}>
+          hidden-signup
+        </a>
+
         <div className="mr-4 hidden md:flex">
           <Link to="/" className="mr-6 flex items-center space-x-2">
             <ShieldCheck className="h-6 w-6 text-primary" />
@@ -35,10 +80,11 @@ export default function Navigation() {
         </div>
 
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+          {/* Mobile menu */}
           <div className="md:hidden">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" type="button">
                   <Menu className="h-5 w-5" />
                   <span className="sr-only">Toggle Menu</span>
                 </Button>
@@ -53,11 +99,7 @@ export default function Navigation() {
                 <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
                   <div className="flex flex-col space-y-3">
                     {navLinks.map((link) => (
-                      <Link
-                        key={link.href}
-                        to={link.href}
-                        className="text-foreground"
-                      >
+                      <Link key={link.href} to={link.href} className="text-foreground">
                         {link.label}
                       </Link>
                     ))}
@@ -65,21 +107,21 @@ export default function Navigation() {
 
                   {/* Member actions (mobile) */}
                   <div className="mt-6 flex flex-col gap-2 pr-6">
-                    <a
-                      href="#"
-                      data-ms-modal="login"
+                    <button
+                      type="button"
+                      onClick={openLogin}
                       className="inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium border border-transparent hover:bg-accent"
                     >
                       Log in
-                    </a>
+                    </button>
 
-                    <a
-                      href="#"
-                      data-ms-modal="signup"
+                    <button
+                      type="button"
+                      onClick={openSignup}
                       className="inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium border hover:bg-accent"
                     >
                       Sign up
-                    </a>
+                    </button>
                   </div>
                 </div>
               </SheetContent>
@@ -88,21 +130,21 @@ export default function Navigation() {
 
           {/* Member actions (desktop) */}
           <nav className="flex items-center gap-2">
-            <a
-              href="#"
-              data-ms-modal="login"
+            <button
+              type="button"
+              onClick={openLogin}
               className="inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium hover:bg-accent"
             >
               Log in
-            </a>
+            </button>
 
-            <a
-              href="#"
-              data-ms-modal="signup"
+            <button
+              type="button"
+              onClick={openSignup}
               className="inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium hover:bg-accent"
             >
               Sign up
-            </a>
+            </button>
           </nav>
         </div>
       </div>
