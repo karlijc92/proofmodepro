@@ -1,7 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import {
+  proofModeCategories,
+  proofModeSkills,
+  trustTagRules,
+  generateProfileId,
+} from "@/data/proofmodeConfig";
 
 declare global {
   interface Window {
@@ -12,6 +18,23 @@ declare global {
   }
 }
 
+function memberIdToProfileNumber(memberId: string) {
+  if (!memberId) return 1001;
+
+  const numbersOnly = memberId.replace(/\D/g, "");
+
+  if (numbersOnly) {
+    return Number(numbersOnly.slice(0, 6)) || 1001;
+  }
+
+  let hash = 0;
+  for (let i = 0; i < memberId.length; i++) {
+    hash = (hash * 31 + memberId.charCodeAt(i)) % 1000000;
+  }
+
+  return hash || 1001;
+}
+
 export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [member, setMember] = useState<any>(null);
@@ -20,13 +43,10 @@ export default function Profile() {
     let cancelled = false;
 
     async function run() {
-      // If Memberstack isn't loaded yet, wait a moment.
       if (!window.$memberstackDom) {
-        // Small delay then try again
         await new Promise((r) => setTimeout(r, 600));
       }
 
-      // If still not available, fail gracefully
       if (!window.$memberstackDom) {
         if (!cancelled) setLoading(false);
         return;
@@ -36,7 +56,6 @@ export default function Profile() {
 
       if (cancelled) return;
 
-      // Not logged in → force login modal, and do NOT show mock profile
       if (!data) {
         setMember(null);
         setLoading(false);
@@ -44,7 +63,6 @@ export default function Profile() {
         return;
       }
 
-      // Logged in
       setMember(data);
       setLoading(false);
     }
@@ -55,6 +73,14 @@ export default function Profile() {
       cancelled = true;
     };
   }, []);
+
+  const proofModeProfileId = useMemo(() => {
+    if (!member?.id) return "—";
+    return generateProfileId(memberIdToProfileNumber(member.id));
+  }, [member]);
+
+  const totalCategories = proofModeCategories.length;
+  const totalSkills = proofModeSkills.length;
 
   return (
     <div className="min-h-screen">
@@ -103,6 +129,26 @@ export default function Profile() {
               <div>
                 <span className="font-medium">Member ID:</span>{" "}
                 {member?.id || "—"}
+              </div>
+              <div>
+                <span className="font-medium">ProofMode Profile ID:</span>{" "}
+                {proofModeProfileId}
+              </div>
+              <div>
+                <span className="font-medium">Launch Categories:</span>{" "}
+                {totalCategories}
+              </div>
+              <div>
+                <span className="font-medium">Launch Skills:</span>{" "}
+                {totalSkills}
+              </div>
+              <div>
+                <span className="font-medium">TrustTag Passing Score:</span>{" "}
+                {trustTagRules.passingScorePercent}%
+              </div>
+              <div>
+                <span className="font-medium">Minimum Evidence Uploads:</span>{" "}
+                {trustTagRules.minimumEvidenceUploads}
               </div>
             </div>
 
