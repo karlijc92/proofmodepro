@@ -8,6 +8,7 @@ import {
   trustTagRules,
   generateProfileId,
 } from "@/data/proofmodeConfig";
+import { proofModeDebugSummary } from "@/data/proofmodeDebug";
 
 declare global {
   interface Window {
@@ -150,6 +151,13 @@ export default function Profile() {
                 <span className="font-medium">Minimum Evidence Uploads:</span>{" "}
                 {trustTagRules.minimumEvidenceUploads}
               </div>
+            </div>
+
+            <div className="mt-6 rounded-lg border p-4 text-xs text-muted-foreground">
+              <div className="mb-2 font-medium">ProofMode Internal Debug</div>
+              <pre className="whitespace-pre-wrap break-words">
+                {JSON.stringify(proofModeDebugSummary, null, 2)}
+              </pre>
             </div>
 
             <div className="mt-6">
