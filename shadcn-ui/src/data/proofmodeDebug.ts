@@ -1,8 +1,13 @@
-import { proofModeSubmissionTestResult } from "@/data/proofmodeSubmissionTest";
+import {
+  proofModeStoredRecords,
+  proofModeSubmissionTestResult,
+} from "@/data/proofmodeSubmissionTest";
 
 export const proofModeDebugSummary = {
   workflowReady: true,
   hasRecord: !!proofModeSubmissionTestResult.record,
+  storedRecordCount: proofModeStoredRecords.length,
+  storedTrustTagIds: proofModeStoredRecords.map((record) => record.trustTagId),
   trustTagId: proofModeSubmissionTestResult.record?.trustTagId || null,
   profileId: proofModeSubmissionTestResult.record?.profileId || null,
   skillCode: proofModeSubmissionTestResult.record?.skillCode || null,
