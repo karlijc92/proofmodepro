@@ -1,7 +1,10 @@
-import { submitProofModeAssessment } from "@/data/proofmodeSubmission";
+import { processProofModeSubmission } from "@/data/proofmodeProcessor";
+import { clearTrustTagStore, getAllTrustTags } from "@/data/proofmodeStore";
+
+clearTrustTagStore();
 
 export const proofModeSubmissionTestResults = {
-  passingEligible: submitProofModeAssessment({
+  passingEligible: processProofModeSubmission({
     profileId: "PM-1001",
     skillCode: "CARP",
     answers: {
@@ -28,7 +31,7 @@ export const proofModeSubmissionTestResults = {
     submittedAt: "2026-03-11T10:10:00Z",
   }),
 
-  passingNeedsMoreEvidence: submitProofModeAssessment({
+  passingNeedsMoreEvidence: processProofModeSubmission({
     profileId: "PM-1002",
     skillCode: "BOOK",
     answers: {
@@ -49,7 +52,7 @@ export const proofModeSubmissionTestResults = {
     submittedAt: "2026-03-11T11:10:00Z",
   }),
 
-  failingAssessment: submitProofModeAssessment({
+  failingAssessment: processProofModeSubmission({
     profileId: "PM-1003",
     skillCode: "WELD",
     answers: {
@@ -76,6 +79,8 @@ export const proofModeSubmissionTestResults = {
     submittedAt: "2026-03-11T12:10:00Z",
   }),
 };
+
+export const proofModeStoredRecords = getAllTrustTags();
 
 export const proofModeSubmissionTestResult =
   proofModeSubmissionTestResults.passingEligible;
