@@ -1,51 +1,68 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Loader2, ShieldPlus } from 'lucide-react';
-import Navigation from '@/components/Navigation';
-import Footer from '@/components/Footer';
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { ShieldPlus } from "lucide-react";
+import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
+import {
+  proofModeCategories,
+  proofModeSkills,
+} from "@/data/proofmodeConfig";
+import { skillHasAssessment } from "@/data/proofmodeHelpers";
 
-interface Skill {
+interface SkillOption {
   id: string;
   title: string;
   description: string;
+  hasAssessment: boolean;
 }
 
-interface Category {
+interface CategoryOption {
   category: string;
-  skills: Skill[];
+  categoryKey: string;
+  skills: SkillOption[];
 }
 
 export default function CreateTrustTagPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch('/data/assessment-categories.json');
-        if (!response.ok) {
-          throw new Error('Failed to load assessment categories.');
-        }
-        const data = await response.json();
-        setCategories(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const categories: CategoryOption[] = useMemo(() => {
+    return proofModeCategories.map((category) => {
+      const skills = proofModeSkills
+        .filter((skill) => skill.category === category.key)
+        .map((skill) => ({
+          id: skill.code,
+          title: skill.name,
+          description: skillHasAssessment(skill.code)
+            ? "Assessment available now."
+            : "Assessment coming soon.",
+          hasAssessment: skillHasAssessment(skill.code),
+        }));
 
-    fetchCategories();
+      return {
+        category: category.label,
+        categoryKey: category.key,
+        skills,
+      };
+    });
   }, []);
 
-  const handleSkillSelection = (skillId: string) => {
+  const availableSelectedCount = selectedSkills.filter((skillCode) =>
+    skillHasAssessment(skillCode)
+  ).length;
+
+  const handleSkillSelection = (skillId: string, hasAssessment: boolean) => {
+    if (!hasAssessment) return;
+
     setSelectedSkills((prev) =>
       prev.includes(skillId)
         ? prev.filter((id) => id !== skillId)
@@ -54,8 +71,12 @@ export default function CreateTrustTagPage() {
   };
 
   const handleStartAssessment = () => {
-    if (selectedSkills.length > 0) {
-      const assessmentId = selectedSkills.join(',');
+    const availableSkills = selectedSkills.filter((skillCode) =>
+      skillHasAssessment(skillCode)
+    );
+
+    if (availableSkills.length > 0) {
+      const assessmentId = availableSkills.join(",");
       navigate(`/assessment/${assessmentId}`);
     }
   };
@@ -75,69 +96,67 @@ export default function CreateTrustTagPage() {
             </p>
           </div>
 
-          {loading && (
-            <div className="flex justify-center items-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-              <p className="ml-4 text-lg text-gray-600">Loading Skill Categories...</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="text-center py-10">
-              <p className="text-red-500">{error}</p>
-            </div>
-          )}
-
-          {!loading && !error && (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Select Skills to Verify</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Accordion type="multiple" className="w-full">
-                    {categories.map((category) => (
-                      <AccordionItem key={category.category} value={category.category}>
-                        <AccordionTrigger className="text-lg font-semibold">{category.category}</AccordionTrigger>
-                        <AccordionContent>
-                          <div className="grid gap-4 mt-4">
-                            {category.skills.map((skill) => (
-                              <div
-                                key={skill.id}
-                                className="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-100"
-                              >
-                                <Checkbox
-                                  id={skill.id}
-                                  checked={selectedSkills.includes(skill.id)}
-                                  onCheckedChange={() => handleSkillSelection(skill.id)}
-                                />
-                                <label
-                                  htmlFor={skill.id}
-                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                >
-                                  {skill.title}
-                                  <p className="text-xs text-muted-foreground">{skill.description}</p>
-                                </label>
-                              </div>
-                            ))}
+          <Card>
+            <CardHeader>
+              <CardTitle>Select Skills to Verify</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="multiple" className="w-full">
+                {categories.map((category) => (
+                  <AccordionItem
+                    key={category.categoryKey}
+                    value={category.categoryKey}
+                  >
+                    <AccordionTrigger className="text-lg font-semibold">
+                      {category.category}
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="grid gap-4 mt-4">
+                        {category.skills.map((skill) => (
+                          <div
+                            key={skill.id}
+                            className={`flex items-center space-x-3 p-3 rounded-md ${
+                              skill.hasAssessment
+                                ? "hover:bg-gray-100"
+                                : "opacity-60"
+                            }`}
+                          >
+                            <Checkbox
+                              id={skill.id}
+                              checked={selectedSkills.includes(skill.id)}
+                              onCheckedChange={() =>
+                                handleSkillSelection(skill.id, skill.hasAssessment)
+                              }
+                              disabled={!skill.hasAssessment}
+                            />
+                            <label
+                              htmlFor={skill.id}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              {skill.title}
+                              <p className="text-xs text-muted-foreground">
+                                {skill.description}
+                              </p>
+                            </label>
                           </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-                </CardContent>
-              </Card>
-              <div className="mt-8 text-center">
-                <Button
-                  size="lg"
-                  onClick={handleStartAssessment}
-                  disabled={selectedSkills.length === 0}
-                >
-                  Start Combined Assessment ({selectedSkills.length} selected)
-                </Button>
-              </div>
-            </>
-          )}
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </CardContent>
+          </Card>
+
+          <div className="mt-8 text-center">
+            <Button
+              size="lg"
+              onClick={handleStartAssessment}
+              disabled={availableSelectedCount === 0}
+            >
+              Start Combined Assessment ({availableSelectedCount} selected)
+            </Button>
+          </div>
         </div>
       </main>
       <Footer />
