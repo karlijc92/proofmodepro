@@ -8,18 +8,12 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { Progress } from '@/components/ui/progress';
-import { getQuestionsForSkillCodes } from '@/data/proofmodeAssessmentData';
-
-interface Question {
-  question: string;
-  options: string[];
-  correctAnswer: string;
-}
+import { getQuestionsForSkillCodes, ProofModeAssessmentQuestionForPage } from '@/data/proofmodeAssessmentData';
 
 interface CombinedAssessment {
   id: string;
   title: string;
-  questions: Question[];
+  questions: ProofModeAssessmentQuestionForPage[];
 }
 
 // Function to shuffle an array
@@ -43,8 +37,9 @@ export default function AssessmentPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
-  const [answers, setAnswers] = useState<string[]>([]);
+  const [selectedAnswerId, setSelectedAnswerId] = useState<string | null>(null);
+  const [selectedAnswerText, setSelectedAnswerText] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<{ questionId: string; answerId: string; answerText: string }[]>([]);
 
   useEffect(() => {
     const buildAssessment = async () => {
@@ -83,19 +78,40 @@ export default function AssessmentPage() {
     buildAssessment();
   }, [id]);
 
-  const handleNextQuestion = () => {
-    if (selectedAnswer) {
-      const newAnswers = [...answers, selectedAnswer];
-      setAnswers(newAnswers);
-      setSelectedAnswer(null);
+  const handleAnswerChange = (value: string) => {
+    if (!assessment) return;
 
-      if (currentQuestionIndex < (assessment?.questions.length ?? 0) - 1) {
+    const currentQuestion = assessment.questions[currentQuestionIndex];
+    const selectedOption = currentQuestion.options.find((option) => option.id === value);
+
+    setSelectedAnswerId(value);
+    setSelectedAnswerText(selectedOption?.text ?? null);
+  };
+
+  const handleNextQuestion = () => {
+    if (selectedAnswerId && selectedAnswerText && assessment) {
+      const currentQuestion = assessment.questions[currentQuestionIndex];
+
+      const newAnswers = [
+        ...answers,
+        {
+          questionId: currentQuestion.id,
+          answerId: selectedAnswerId,
+          answerText: selectedAnswerText,
+        },
+      ];
+
+      setAnswers(newAnswers);
+      setSelectedAnswerId(null);
+      setSelectedAnswerText(null);
+
+      if (currentQuestionIndex < assessment.questions.length - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else {
         const originalAssessmentData = {
-          id: assessment?.id,
-          title: assessment?.title,
-          questions: assessment?.questions,
+          id: assessment.id,
+          title: assessment.title,
+          questions: assessment.questions,
         };
 
         navigate(`/assessment/${id}/results`, {
@@ -146,19 +162,19 @@ export default function AssessmentPage() {
           </CardHeader>
           <CardContent>
             <p className="font-semibold text-lg mb-4">{currentQuestion.question}</p>
-            <RadioGroup value={selectedAnswer ?? ''} onValueChange={setSelectedAnswer}>
-              {currentQuestion.options.map((option, index) => (
-                <div key={index} className="flex items-center space-x-2 p-3 rounded-md hover:bg-gray-100">
-                  <RadioGroupItem value={option} id={`option-${index}`} />
-                  <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
-                    {option}
+            <RadioGroup value={selectedAnswerId ?? ''} onValueChange={handleAnswerChange}>
+              {currentQuestion.options.map((option) => (
+                <div key={option.id} className="flex items-center space-x-2 p-3 rounded-md hover:bg-gray-100">
+                  <RadioGroupItem value={option.id} id={`option-${option.id}`} />
+                  <Label htmlFor={`option-${option.id}`} className="flex-1 cursor-pointer">
+                    {option.text}
                   </Label>
                 </div>
               ))}
             </RadioGroup>
           </CardContent>
           <CardFooter>
-            <Button onClick={handleNextQuestion} disabled={!selectedAnswer} className="w-full">
+            <Button onClick={handleNextQuestion} disabled={!selectedAnswerId} className="w-full">
               {currentQuestionIndex < assessment.questions.length - 1 ? 'Next Question' : 'Finish Assessment'}
             </Button>
           </CardFooter>
