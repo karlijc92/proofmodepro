@@ -77,7 +77,7 @@ export default function CreateTrustTagPage() {
 
     if (availableSkills.length > 0) {
       const assessmentId = availableSkills.join(",");
-      navigate(`/assessment/${assessmentId}`);
+      navigate(`/proof-upload/${assessmentId}`);
     }
   };
 
@@ -92,7 +92,8 @@ export default function CreateTrustTagPage() {
               Create Your TrustTag
             </h1>
             <p className="mt-4 text-xl text-gray-600">
-              Select the skills you want to get verified. You can choose multiple skills for a combined assessment.
+              Select the skills you want to get verified. You can choose multiple
+              skills for a combined assessment.
             </p>
           </div>
 
@@ -154,7 +155,7 @@ export default function CreateTrustTagPage() {
               onClick={handleStartAssessment}
               disabled={availableSelectedCount === 0}
             >
-              Start Combined Assessment ({availableSelectedCount} selected)
+              Continue to Optional Proof Upload ({availableSelectedCount} selected)
             </Button>
           </div>
         </div>
