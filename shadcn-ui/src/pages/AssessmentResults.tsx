@@ -1,27 +1,45 @@
-import { useLocation, Link, useParams } from 'react-router-dom';
+import { useLocation, Link, useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Award } from 'lucide-react';
+import { CheckCircle, XCircle, Award, Loader2 } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { toast } from 'sonner';
+import { processProofModeSubmission } from '@/data/proofmodeProcessor';
+import { getAssessmentBySkillCode } from '@/data/proofmodeHelpers';
 
-interface Question {
+interface AssessmentAnswer {
+  questionId: string;
+  answerId: string;
+  answerText: string;
+}
+
+interface AssessmentQuestionOption {
+  id: string;
+  text: string;
+}
+
+interface AssessmentQuestion {
+  id: string;
   question: string;
-  options: string[];
-  correctAnswer: string;
+  options: AssessmentQuestionOption[];
+  correctAnswerId: string;
+  correctAnswerText: string;
 }
 
 interface AssessmentData {
   id: string;
   title: string;
-  questions: Question[];
+  questions: AssessmentQuestion[];
 }
 
 export default function AssessmentResultsPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  
+  const [isSaving, setIsSaving] = useState(false);
+
   if (!location.state) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
@@ -33,20 +51,86 @@ export default function AssessmentResultsPage() {
     );
   }
 
-  const { answers, assessment } = location.state as { answers: string[]; assessment: AssessmentData };
+  const { answers, assessment } = location.state as {
+    answers: AssessmentAnswer[];
+    assessment: AssessmentData;
+  };
 
-  const correctAnswersCount = assessment.questions.reduce((count, question, index) => {
-    return question.correctAnswer === answers[index] ? count + 1 : count;
+  const selectedSkillCodes = assessment.id
+    .split(',')
+    .map((code) => code.trim())
+    .filter(Boolean);
+
+  const primarySkillCode = selectedSkillCodes[0] || '';
+
+  const correctAnswersCount = assessment.questions.reduce((count, question) => {
+    const userAnswer = answers.find((answer) => answer.questionId === question.id);
+    return userAnswer?.answerId === question.correctAnswerId ? count + 1 : count;
   }, 0);
 
   const score = Math.round((correctAnswersCount / assessment.questions.length) * 100);
   const passed = score >= 80;
 
-  const handleAddToProfile = () => {
-    // Placeholder for Phase 2: Supabase integration
-    toast.info('Coming Soon!', {
-      description: 'This feature will be available soon to add your verified skill to your profile.',
-    });
+  const handleAddToProfile = async () => {
+    if (!primarySkillCode) {
+      toast.error('Could not save TrustTag', {
+        description: 'No skill code was found for this assessment.',
+      });
+      return;
+    }
+
+    const fullAssessment = getAssessmentBySkillCode(primarySkillCode);
+
+    if (!fullAssessment) {
+      toast.error('Could not save TrustTag', {
+        description: 'The assessment data for this skill could not be found.',
+      });
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const answerMap = answers.reduce<Record<string, string>>((acc, answer) => {
+        acc[answer.questionId] = answer.answerId;
+        return acc;
+      }, {});
+
+      const result = processProofModeSubmission({
+        profileId: 'internal-demo-profile',
+        skillCode: primarySkillCode,
+        answers: answerMap,
+        evidenceItems: [],
+        existingRecordCount: 0,
+        submittedAt: new Date().toISOString(),
+      });
+
+      if (!result.scoreResult || !result.eligibilityResult) {
+        toast.error('Could not save TrustTag', {
+          description: 'The submission could not be processed.',
+        });
+        return;
+      }
+
+      if (!result.record) {
+        toast.warning('Assessment processed', {
+          description: 'You passed scoring, but no TrustTag record was created yet.',
+        });
+        return;
+      }
+
+      toast.success('TrustTag added', {
+        description: 'Your assessment result was added to your profile record.',
+      });
+
+      navigate('/profile');
+    } catch (error) {
+      toast.error('Could not save TrustTag', {
+        description: 'Something went wrong while creating your TrustTag.',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -67,13 +151,24 @@ export default function AssessmentResultsPage() {
               </p>
               {passed ? (
                 <>
-                  <p className="mt-4 text-green-600 font-semibold">Congratulations! You have passed this assessment.</p>
-                  <Button onClick={handleAddToProfile} className="mt-4">
-                    Add to Profile & Download TrustTag
+                  <p className="mt-4 text-green-600 font-semibold">
+                    Congratulations! You have passed this assessment.
+                  </p>
+                  <Button onClick={handleAddToProfile} className="mt-4" disabled={isSaving}>
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving TrustTag...
+                      </>
+                    ) : (
+                      'Add to Profile & Download TrustTag'
+                    )}
                   </Button>
                 </>
               ) : (
-                <p className="mt-4 text-red-600 font-semibold">You did not pass. A score of 80% or higher is required.</p>
+                <p className="mt-4 text-red-600 font-semibold">
+                  You did not pass. A score of 80% or higher is required.
+                </p>
               )}
               <div className="flex gap-4 justify-center mt-6">
                 <Button asChild>
@@ -89,20 +184,35 @@ export default function AssessmentResultsPage() {
           <div className="mt-12">
             <h2 className="text-2xl font-bold text-center mb-6">Review Your Answers</h2>
             <div className="space-y-6">
-              {assessment.questions.map((question, index) => {
-                const userAnswer = answers[index];
-                const isCorrect = question.correctAnswer === userAnswer;
+              {assessment.questions.map((question) => {
+                const userAnswer = answers.find((answer) => answer.questionId === question.id);
+                const isCorrect = userAnswer?.answerId === question.correctAnswerId;
+
                 return (
-                  <Card key={index} className={isCorrect ? 'border-green-200' : 'border-red-200'}>
+                  <Card key={question.id} className={isCorrect ? 'border-green-200' : 'border-red-200'}>
                     <CardHeader>
                       <CardTitle className="flex items-start gap-3">
-                        {isCorrect ? <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0" /> : <XCircle className="h-6 w-6 text-red-500 flex-shrink-0" />}
+                        {isCorrect ? (
+                          <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0" />
+                        ) : (
+                          <XCircle className="h-6 w-6 text-red-500 flex-shrink-0" />
+                        )}
                         <span className="flex-1">{question.question}</span>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p>Your answer: <span className={isCorrect ? 'text-green-700' : 'text-red-700'}>{userAnswer}</span></p>
-                      {!isCorrect && <p>Correct answer: <span className="text-green-700">{question.correctAnswer}</span></p>}
+                      <p>
+                        Your answer:{' '}
+                        <span className={isCorrect ? 'text-green-700' : 'text-red-700'}>
+                          {userAnswer?.answerText || 'No answer selected'}
+                        </span>
+                      </p>
+                      {!isCorrect && (
+                        <p>
+                          Correct answer:{' '}
+                          <span className="text-green-700">{question.correctAnswerText}</span>
+                        </p>
+                      )}
                     </CardContent>
                   </Card>
                 );
