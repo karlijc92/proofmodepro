@@ -19,6 +19,7 @@ import Disclaimer from "./pages/Disclaimer";
 import CreateTrustTagPage from "./pages/CreateTrustTag";
 import AssessmentPage from "./pages/Assessment";
 import AssessmentResultsPage from "./pages/AssessmentResults";
+import ProofUploadPage from "./pages/ProofUpload";
 
 import RequireAuth from "./components/RequireAuth";
 
@@ -53,6 +54,7 @@ const App = () => (
           <Route path="/refund" element={<Refund />} />
           <Route path="/disclaimer" element={<Disclaimer />} />
           <Route path="/create-trust-tag" element={<CreateTrustTagPage />} />
+          <Route path="/proof-upload/:id" element={<ProofUploadPage />} />
           <Route path="/assessment/:id" element={<AssessmentPage />} />
           <Route
             path="/assessment/:id/results"
