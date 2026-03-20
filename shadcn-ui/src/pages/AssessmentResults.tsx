@@ -34,6 +34,13 @@ interface AssessmentData {
   questions: AssessmentQuestion[];
 }
 
+interface UploadedEvidenceItem {
+  id: string;
+  name: string;
+  typeLabel: string;
+  sizeLabel: string;
+}
+
 export default function AssessmentResultsPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -51,9 +58,10 @@ export default function AssessmentResultsPage() {
     );
   }
 
-  const { answers, assessment } = location.state as {
+  const { answers, assessment, uploadedEvidence } = location.state as {
     answers: AssessmentAnswer[];
     assessment: AssessmentData;
+    uploadedEvidence?: UploadedEvidenceItem[];
   };
 
   const selectedSkillCodes = assessment.id
@@ -96,11 +104,18 @@ export default function AssessmentResultsPage() {
         return acc;
       }, {});
 
+      const evidenceItemsForSubmission = (uploadedEvidence || []).map((item) => ({
+        id: item.id,
+        name: item.name,
+        type: item.typeLabel,
+        sizeLabel: item.sizeLabel,
+      }));
+
       const result = processProofModeSubmission({
         profileId: 'internal-demo-profile',
         skillCode: primarySkillCode,
         answers: answerMap,
-        evidenceItems: [],
+        evidenceItems: evidenceItemsForSubmission,
         existingRecordCount: 0,
         submittedAt: new Date().toISOString(),
       });
@@ -119,8 +134,8 @@ export default function AssessmentResultsPage() {
         return;
       }
 
-      toast.success('Assessment passed', {
-        description: 'Continue to upload evidence for your TrustTag.',
+      toast.success('TrustTag created', {
+        description: 'Your assessment and uploaded evidence were saved.',
       });
 
       navigate(`/proof-upload/${result.record.id}`);
@@ -161,7 +176,7 @@ export default function AssessmentResultsPage() {
                         Saving TrustTag...
                       </>
                     ) : (
-                      'Continue to Evidence Upload'
+                      'Save TrustTag'
                     )}
                   </Button>
                 </>
