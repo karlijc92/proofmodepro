@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -14,6 +14,13 @@ interface CombinedAssessment {
   id: string;
   title: string;
   questions: ProofModeAssessmentQuestionForPage[];
+}
+
+interface UploadedEvidenceItem {
+  id: string;
+  name: string;
+  typeLabel: string;
+  sizeLabel: string;
 }
 
 // Function to shuffle an array
@@ -33,6 +40,8 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 export default function AssessmentPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [assessment, setAssessment] = useState<CombinedAssessment | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +49,9 @@ export default function AssessmentPage() {
   const [selectedAnswerId, setSelectedAnswerId] = useState<string | null>(null);
   const [selectedAnswerText, setSelectedAnswerText] = useState<string | null>(null);
   const [answers, setAnswers] = useState<{ questionId: string; answerId: string; answerText: string }[]>([]);
+
+  const uploadedEvidence: UploadedEvidenceItem[] =
+    (location.state as { uploadedEvidence?: UploadedEvidenceItem[] } | null)?.uploadedEvidence || [];
 
   useEffect(() => {
     const buildAssessment = async () => {
@@ -118,6 +130,7 @@ export default function AssessmentPage() {
           state: {
             answers: newAnswers,
             assessment: originalAssessmentData,
+            uploadedEvidence,
           },
         });
       }
