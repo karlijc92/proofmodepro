@@ -119,11 +119,11 @@ export default function AssessmentResultsPage() {
         return;
       }
 
-      toast.success('TrustTag added', {
-        description: 'Your assessment result was added to your profile record.',
+      toast.success('Assessment passed', {
+        description: 'Continue to upload evidence for your TrustTag.',
       });
 
-      navigate('/profile');
+      navigate(`/proof-upload/${result.record.id}`);
     } catch (error) {
       toast.error('Could not save TrustTag', {
         description: 'Something went wrong while creating your TrustTag.',
@@ -161,7 +161,7 @@ export default function AssessmentResultsPage() {
                         Saving TrustTag...
                       </>
                     ) : (
-                      'Add to Profile & Download TrustTag'
+                      'Continue to Evidence Upload'
                     )}
                   </Button>
                 </>
