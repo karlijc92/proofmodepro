@@ -113,34 +113,64 @@ export default function CreateTrustTagPage() {
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="grid gap-4 mt-4">
-                        {category.skills.map((skill) => (
-                          <div
-                            key={skill.id}
-                            className={`flex items-center space-x-3 p-3 rounded-md ${
-                              skill.hasAssessment
-                                ? "hover:bg-gray-100"
-                                : "opacity-60"
-                            }`}
-                          >
-                            <Checkbox
-                              id={skill.id}
-                              checked={selectedSkills.includes(skill.id)}
-                              onCheckedChange={() =>
+                        {category.skills.map((skill) => {
+                          const isSelected = selectedSkills.includes(skill.id);
+
+                          return (
+                            <button
+                              key={skill.id}
+                              type="button"
+                              onClick={() =>
                                 handleSkillSelection(skill.id, skill.hasAssessment)
                               }
                               disabled={!skill.hasAssessment}
-                            />
-                            <label
-                              htmlFor={skill.id}
-                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                              className={`w-full rounded-lg border p-4 text-left transition ${
+                                skill.hasAssessment
+                                  ? "cursor-pointer hover:bg-gray-50 hover:border-primary"
+                                  : "cursor-not-allowed opacity-60"
+                              } ${
+                                isSelected
+                                  ? "border-primary bg-primary/5"
+                                  : "border-gray-200 bg-white"
+                              }`}
                             >
-                              {skill.title}
-                              <p className="text-xs text-muted-foreground">
-                                {skill.description}
-                              </p>
-                            </label>
-                          </div>
-                        ))}
+                              <div className="flex items-start gap-3">
+                                <div
+                                  className="pt-0.5"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Checkbox
+                                    id={skill.id}
+                                    checked={isSelected}
+                                    onCheckedChange={() =>
+                                      handleSkillSelection(
+                                        skill.id,
+                                        skill.hasAssessment
+                                      )
+                                    }
+                                    disabled={!skill.hasAssessment}
+                                  />
+                                </div>
+
+                                <div className="flex-1">
+                                  <label
+                                    htmlFor={skill.id}
+                                    className={`block text-sm font-semibold ${
+                                      skill.hasAssessment
+                                        ? "cursor-pointer"
+                                        : "cursor-not-allowed"
+                                    }`}
+                                  >
+                                    {skill.title}
+                                  </label>
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    {skill.description}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
