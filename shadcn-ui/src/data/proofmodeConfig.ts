@@ -59,7 +59,7 @@ export const proofModeSkills = [
 ];
 
 export const trustTagRules = {
-  questionCount: 20,
+  questionCount: 15,
   passingScorePercent: 75,
   minimumEvidenceUploads: 2,
   validMonths: 12,
