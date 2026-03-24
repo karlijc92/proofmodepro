@@ -1,5 +1,5 @@
-import { useLocation, Link, useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useLocation, Link, useParams } from 'react-router-dom';
+import { useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Award, Loader2 } from 'lucide-react';
@@ -43,9 +43,9 @@ interface UploadedEvidenceItem {
 
 export default function AssessmentResultsPage() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [isSaving, setIsSaving] = useState(false);
+  const [savedRecordId, setSavedRecordId] = useState<string | null>(null);
 
   if (!location.state) {
     return (
@@ -64,22 +64,26 @@ export default function AssessmentResultsPage() {
     uploadedEvidence?: UploadedEvidenceItem[];
   };
 
-  const selectedSkillCodes = assessment.id
-    .split(',')
-    .map((code) => code.trim())
-    .filter(Boolean);
+  const selectedSkillCodes = useMemo(() => {
+    return assessment.id
+      .split(',')
+      .map((code) => code.trim())
+      .filter(Boolean);
+  }, [assessment.id]);
 
   const primarySkillCode = selectedSkillCodes[0] || '';
 
-  const correctAnswersCount = assessment.questions.reduce((count, question) => {
-    const userAnswer = answers.find((answer) => answer.questionId === question.id);
-    return userAnswer?.answerId === question.correctAnswerId ? count + 1 : count;
-  }, 0);
+  const correctAnswersCount = useMemo(() => {
+    return assessment.questions.reduce((count, question) => {
+      const userAnswer = answers.find((answer) => answer.questionId === question.id);
+      return userAnswer?.answerId === question.correctAnswerId ? count + 1 : count;
+    }, 0);
+  }, [answers, assessment.questions]);
 
   const score = Math.round((correctAnswersCount / assessment.questions.length) * 100);
   const passed = score >= 80;
 
-  const handleAddToProfile = async () => {
+  const handleSaveTrustTag = async () => {
     if (!primarySkillCode) {
       toast.error('Could not save TrustTag', {
         description: 'No skill code was found for this assessment.',
@@ -134,11 +138,11 @@ export default function AssessmentResultsPage() {
         return;
       }
 
+      setSavedRecordId(result.record.id);
+
       toast.success('TrustTag created', {
         description: 'Your assessment and uploaded evidence were saved.',
       });
-
-      navigate(`/proof-upload/${result.record.id}`);
     } catch (error) {
       toast.error('Could not save TrustTag', {
         description: 'Something went wrong while creating your TrustTag.',
@@ -164,27 +168,40 @@ export default function AssessmentResultsPage() {
               <p className="mt-2 text-lg">
                 You correctly answered {correctAnswersCount} out of {assessment.questions.length} questions.
               </p>
+
               {passed ? (
                 <>
                   <p className="mt-4 text-green-600 font-semibold">
                     Congratulations! You have passed this assessment.
                   </p>
-                  <Button onClick={handleAddToProfile} className="mt-4" disabled={isSaving}>
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving TrustTag...
-                      </>
-                    ) : (
-                      'Save TrustTag'
-                    )}
-                  </Button>
+
+                  {savedRecordId ? (
+                    <div className="mt-4 space-y-2">
+                      <p className="text-sm text-gray-600">TrustTag saved successfully.</p>
+                      <p className="text-sm text-gray-500">Record ID: {savedRecordId}</p>
+                      <Button disabled className="mt-1">
+                        TrustTag Saved
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button onClick={handleSaveTrustTag} className="mt-4" disabled={isSaving}>
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving TrustTag...
+                        </>
+                      ) : (
+                        'Save TrustTag'
+                      )}
+                    </Button>
+                  )}
                 </>
               ) : (
                 <p className="mt-4 text-red-600 font-semibold">
                   You did not pass. A score of 80% or higher is required.
                 </p>
               )}
+
               <div className="flex gap-4 justify-center mt-6">
                 <Button asChild>
                   <Link to="/create-trust-tag">Choose Another Assessment</Link>
