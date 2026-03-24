@@ -1,4 +1,4 @@
-import { useLocation, Link, useParams } from 'react-router-dom';
+import { useLocation, Link, useParams, useNavigate } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,6 +44,7 @@ interface UploadedEvidenceItem {
 export default function AssessmentResultsPage() {
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
   const [savedRecordId, setSavedRecordId] = useState<string | null>(null);
 
@@ -152,6 +153,10 @@ export default function AssessmentResultsPage() {
     }
   };
 
+  const handleViewMyTrustTags = () => {
+    navigate('/profile-preview');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navigation />
@@ -179,9 +184,16 @@ export default function AssessmentResultsPage() {
                     <div className="mt-4 space-y-2">
                       <p className="text-sm text-gray-600">TrustTag saved successfully.</p>
                       <p className="text-sm text-gray-500">Record ID: {savedRecordId}</p>
-                      <Button disabled className="mt-1">
-                        TrustTag Saved
-                      </Button>
+
+                      <div className="flex flex-col items-center gap-2">
+                        <Button disabled>
+                          TrustTag Saved
+                        </Button>
+
+                        <Button variant="outline" onClick={handleViewMyTrustTags}>
+                          View My TrustTags
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <Button onClick={handleSaveTrustTag} className="mt-4" disabled={isSaving}>
