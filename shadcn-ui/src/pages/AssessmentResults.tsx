@@ -139,7 +139,7 @@ export default function AssessmentResultsPage() {
         return;
       }
 
-      setSavedRecordId(result.record.id);
+      setSavedRecordId(result.record.trustTagId);
 
       toast.success('TrustTag created', {
         description: 'Your assessment and uploaded evidence were saved.',
@@ -160,6 +160,7 @@ export default function AssessmentResultsPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navigation />
+
       <main className="flex-grow container mx-auto px-4 py-12">
         <div className="max-w-3xl mx-auto">
           <Card className="text-center">
@@ -168,6 +169,7 @@ export default function AssessmentResultsPage() {
               <CardTitle className="text-3xl font-bold mt-4">{assessment.title}</CardTitle>
               <CardDescription className="text-xl text-gray-600">Assessment Complete</CardDescription>
             </CardHeader>
+
             <CardContent>
               <p className="text-5xl font-bold">{score}%</p>
               <p className="mt-2 text-lg">
@@ -186,9 +188,7 @@ export default function AssessmentResultsPage() {
                       <p className="text-sm text-gray-500">Record ID: {savedRecordId}</p>
 
                       <div className="flex flex-col items-center gap-2">
-                        <Button disabled>
-                          TrustTag Saved
-                        </Button>
+                        <Button disabled>TrustTag Saved</Button>
 
                         <Button variant="outline" onClick={handleViewMyTrustTags}>
                           View My TrustTags
@@ -227,6 +227,7 @@ export default function AssessmentResultsPage() {
 
           <div className="mt-12">
             <h2 className="text-2xl font-bold text-center mb-6">Review Your Answers</h2>
+
             <div className="space-y-6">
               {assessment.questions.map((question) => {
                 const userAnswer = answers.find((answer) => answer.questionId === question.id);
@@ -244,6 +245,7 @@ export default function AssessmentResultsPage() {
                         <span className="flex-1">{question.question}</span>
                       </CardTitle>
                     </CardHeader>
+
                     <CardContent>
                       <p>
                         Your answer:{' '}
@@ -251,6 +253,7 @@ export default function AssessmentResultsPage() {
                           {userAnswer?.answerText || 'No answer selected'}
                         </span>
                       </p>
+
                       {!isCorrect && (
                         <p>
                           Correct answer:{' '}
@@ -265,6 +268,7 @@ export default function AssessmentResultsPage() {
           </div>
         </div>
       </main>
+
       <Footer />
     </div>
   );
