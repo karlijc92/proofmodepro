@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import Airtable from "airtable";
+import { createClient } from "@supabase/supabase-js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -9,33 +9,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "Missing email" });
     }
 
-    const apiKey = process.env.AIRTABLE_API_KEY;
-    const baseId = process.env.AIRTABLE_BASE_ID;
+    const supabaseUrl = process.env.VITE_SUPABASE_URL;
+    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 
-    if (!apiKey || !baseId) {
-      return res.status(500).json({ error: "Server not configured" });
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: "Supabase not configured" });
     }
 
-    const base = new Airtable({ apiKey }).base(baseId);
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const records = await base("TrustTags")
-      .select({
-        filterByFormula: `LOWER({Email}) = LOWER("${email}")`,
-        sort: [{ field: "Date Issued", direction: "desc" }],
-      })
-      .all();
+    const { data, error } = await supabase
+      .from("trusttags")
+      .select("*")
+      .ilike("email", email)
+      .order("date_issued", { ascending: false });
 
-    const trustTags = records.map((record) => ({
-      trustTagId: record.get("Tag ID") as string,
-      fullName: record.get("Full Name") as string,
-      skillName: record.get("Certificate Type") as string,
-      dateIssued: record.get("Date Issued") as string,
-      status: record.get("Status") as string,
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    const trustTags = (data || []).map((tag) => ({
+      trustTagId: tag.tag_id,
+      fullName: tag.full_name,
+      skillName: tag.skill_name,
+      dateIssued: tag.date_issued,
+      status: tag.status,
     }));
 
     return res.status(200).json({ trustTags });
   } catch (error) {
-    console.error("TrustTag fetch error:", error);
+    console.error("Supabase fetch error:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }
