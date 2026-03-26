@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -20,10 +21,18 @@ function formatStatus(status: string) {
 }
 
 export default function ProfilePreview() {
-  const trustTags = getAllTrustTags();
+  const [trustTags, setTrustTags] = useState<any[]>([]);
+  const [storageChecked, setStorageChecked] = useState(false);
+
+  useEffect(() => {
+    const records = getAllTrustTags();
+    setTrustTags(records);
+    setStorageChecked(true);
+  }, []);
 
   const handleClearPreviewData = () => {
     clearTrustTagStore();
+    setTrustTags([]);
     window.location.reload();
   };
 
@@ -39,7 +48,9 @@ export default function ProfilePreview() {
             </CardHeader>
 
             <CardContent className="space-y-4">
-              {trustTags.length === 0 ? (
+              {!storageChecked ? (
+                <p className="text-sm text-gray-500">Loading TrustTags...</p>
+              ) : trustTags.length === 0 ? (
                 <p className="text-sm text-gray-500">
                   No TrustTags found yet. Complete an assessment to create one.
                 </p>
@@ -51,15 +62,31 @@ export default function ProfilePreview() {
                       className="border rounded-md p-4 bg-white"
                     >
                       <p className="font-semibold">{tag.skillName}</p>
+
                       <p className="text-sm text-gray-600">
                         TrustTag ID: {tag.trustTagId}
                       </p>
+
                       <p className="text-sm text-gray-600">
                         Score: {tag.assessmentScorePercent}%
                       </p>
+
                       <p className="text-sm text-gray-600">
                         Evidence Items: {tag.evidenceCount}
                       </p>
+
+                      <p className="text-sm text-gray-600">
+                        Profile ID: {tag.profileId}
+                      </p>
+
+                      <p className="text-sm text-gray-600">
+                        Issued: {tag.issuedAt}
+                      </p>
+
+                      <p className="text-sm text-gray-600">
+                        Expires: {tag.expiresAt}
+                      </p>
+
                       <p className="text-sm text-gray-500">
                         Status: {formatStatus(tag.status)}
                       </p>
