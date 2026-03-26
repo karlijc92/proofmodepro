@@ -14,14 +14,28 @@ export interface SubmitProofModeAssessmentInput {
 
 export interface SubmitProofModeAssessmentResult {
   record: ProofModeTrustTagRecord | null;
-  scoreResult: ReturnType<typeof scoreAssessment>;
+  scoreResult: ReturnType<typeof scoreAssessment> | null;
   eligibilityResult: ReturnType<typeof evaluateTrustTagEligibility> | null;
+}
+
+function sanitizeInput(input: SubmitProofModeAssessmentInput) {
+  return {
+    ...input,
+    existingRecordCount: input.existingRecordCount ?? 0,
+    submittedAt: input.submittedAt || new Date().toISOString(),
+    evidenceItems: input.evidenceItems || [],
+  };
 }
 
 export function submitProofModeAssessment(
   input: SubmitProofModeAssessmentInput
 ): SubmitProofModeAssessmentResult {
-  const scoreResult = scoreAssessment(input.skillCode, input.answers);
+  const cleanInput = sanitizeInput(input);
+
+  const scoreResult = scoreAssessment(
+    cleanInput.skillCode,
+    cleanInput.answers
+  );
 
   if (!scoreResult) {
     return {
@@ -33,17 +47,17 @@ export function submitProofModeAssessment(
 
   const eligibilityResult = evaluateTrustTagEligibility(
     scoreResult,
-    input.evidenceItems.length
+    cleanInput.evidenceItems.length
   );
 
   const record = createTrustTagRecord({
-    profileId: input.profileId,
-    skillCode: input.skillCode,
+    profileId: cleanInput.profileId,
+    skillCode: cleanInput.skillCode,
     scoreResult,
     eligibilityResult,
-    evidenceItems: input.evidenceItems,
-    existingRecordCount: input.existingRecordCount,
-    submittedAt: input.submittedAt,
+    evidenceItems: cleanInput.evidenceItems,
+    existingRecordCount: cleanInput.existingRecordCount,
+    submittedAt: cleanInput.submittedAt,
   });
 
   return {
