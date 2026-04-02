@@ -1,13 +1,10 @@
-import { useLocation, Link, useParams, useNavigate } from 'react-router-dom';
-import { useMemo, useState } from 'react';
+import { useLocation, Link, useParams } from 'react-router-dom';
+import { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Award, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Award } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
-import { toast } from 'sonner';
-import { processProofModeSubmission } from '@/data/proofmodeProcessor';
-import { getAssessmentBySkillCode } from '@/data/proofmodeHelpers';
 
 interface AssessmentAnswer {
   questionId: string;
@@ -44,9 +41,6 @@ interface UploadedEvidenceItem {
 export default function AssessmentResultsPage() {
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [isSaving, setIsSaving] = useState(false);
-  const [savedRecordId, setSavedRecordId] = useState<string | null>(null);
 
   if (!location.state) {
     return (
@@ -59,20 +53,11 @@ export default function AssessmentResultsPage() {
     );
   }
 
-  const { answers, assessment, uploadedEvidence } = location.state as {
+  const { answers, assessment } = location.state as {
     answers: AssessmentAnswer[];
     assessment: AssessmentData;
     uploadedEvidence?: UploadedEvidenceItem[];
   };
-
-  const selectedSkillCodes = useMemo(() => {
-    return assessment.id
-      .split(',')
-      .map((code) => code.trim())
-      .filter(Boolean);
-  }, [assessment.id]);
-
-  const primarySkillCode = selectedSkillCodes[0] || '';
 
   const correctAnswersCount = useMemo(() => {
     return assessment.questions.reduce((count, question) => {
@@ -83,79 +68,6 @@ export default function AssessmentResultsPage() {
 
   const score = Math.round((correctAnswersCount / assessment.questions.length) * 100);
   const passed = score >= 80;
-
-  const handleSaveTrustTag = async () => {
-    if (!primarySkillCode) {
-      toast.error('Could not save TrustTag', {
-        description: 'No skill code was found for this assessment.',
-      });
-      return;
-    }
-
-    const fullAssessment = getAssessmentBySkillCode(primarySkillCode);
-
-    if (!fullAssessment) {
-      toast.error('Could not save TrustTag', {
-        description: 'The assessment data for this skill could not be found.',
-      });
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      const answerMap = answers.reduce<Record<string, string>>((acc, answer) => {
-        acc[answer.questionId] = answer.answerId;
-        return acc;
-      }, {});
-
-      const evidenceItemsForSubmission = (uploadedEvidence || []).map((item) => ({
-        id: item.id,
-        name: item.name,
-        type: item.typeLabel,
-        sizeLabel: item.sizeLabel,
-      }));
-
-      const result = processProofModeSubmission({
-        profileId: 'internal-demo-profile',
-        skillCode: primarySkillCode,
-        answers: answerMap,
-        evidenceItems: evidenceItemsForSubmission,
-        existingRecordCount: 0,
-        submittedAt: new Date().toISOString(),
-      });
-
-      if (!result.scoreResult || !result.eligibilityResult) {
-        toast.error('Could not save TrustTag', {
-          description: 'The submission could not be processed.',
-        });
-        return;
-      }
-
-      if (!result.record) {
-        toast.warning('Assessment processed', {
-          description: 'You passed scoring, but no TrustTag record was created yet.',
-        });
-        return;
-      }
-
-      setSavedRecordId(result.record.trustTagId);
-
-      toast.success('TrustTag created', {
-        description: 'Your assessment and uploaded evidence were saved.',
-      });
-    } catch (error) {
-      toast.error('Could not save TrustTag', {
-        description: 'Something went wrong while creating your TrustTag.',
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleViewMyTrustTags = () => {
-    navigate('/profile-preview');
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -179,34 +91,22 @@ export default function AssessmentResultsPage() {
               {passed ? (
                 <>
                   <p className="mt-4 text-green-600 font-semibold">
-                    Congratulations! You have passed this assessment.
+                    🎉 You passed this assessment
                   </p>
 
-                  {savedRecordId ? (
-                    <div className="mt-4 space-y-2">
-                      <p className="text-sm text-gray-600">TrustTag saved successfully.</p>
-                      <p className="text-sm text-gray-500">Record ID: {savedRecordId}</p>
+                  <p className="mt-2 text-gray-600">
+                    You qualify for a verified TrustTag.
+                  </p>
 
-                      <div className="flex flex-col items-center gap-2">
-                        <Button disabled>TrustTag Saved</Button>
-
-                        <Button variant="outline" onClick={handleViewMyTrustTags}>
-                          View My TrustTags
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <Button onClick={handleSaveTrustTag} className="mt-4" disabled={isSaving}>
-                      {isSaving ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Saving TrustTag...
-                        </>
-                      ) : (
-                        'Save TrustTag'
-                      )}
+                  <div className="mt-6 space-y-3">
+                    <Button className="w-full">
+                      Unlock Your TrustTag
                     </Button>
-                  )}
+
+                    <p className="text-xs text-gray-500">
+                      One-time fee to generate your verified credential
+                    </p>
+                  </div>
                 </>
               ) : (
                 <p className="mt-4 text-red-600 font-semibold">
