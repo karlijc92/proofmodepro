@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Loader2, ShieldCheck, AlertTriangle, Search } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import BackButton from "@/components/BackButton";
 import Footer from "@/components/Footer";
@@ -71,7 +71,6 @@ export default function VerifyPage() {
       case "rejected":
         return "destructive";
       case "needs_more_evidence":
-        return "secondary";
       case "pending_review":
         return "secondary";
       default:
@@ -94,41 +93,61 @@ export default function VerifyPage() {
                 TrustTag Verification
               </CardTitle>
               <CardDescription>
-                Enter a TrustTag ID to verify authenticity.
+                Verify a worker’s skill certification using their TrustTag ID.
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-6">
+              
+              {/* INPUT */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <Input
-                  placeholder="Enter TrustTag ID"
+                  placeholder="Paste or enter TrustTag ID (e.g. TT-12345)"
                   value={tagIdInput}
                   onChange={(e) => setTagIdInput(e.target.value)}
                 />
-                <Button onClick={handleVerify}>Verify</Button>
+                <Button onClick={handleVerify}>
+                  <Search className="w-4 h-4 mr-2" />
+                  Verify
+                </Button>
               </div>
 
+              {/* HELP TEXT */}
+              {!searched && (
+                <div className="text-sm text-gray-500 text-center">
+                  Enter a TrustTag ID provided by a worker to confirm their verified skill.
+                </div>
+              )}
+
+              {/* LOADING */}
               {loading && (
                 <div className="flex items-center justify-center p-8">
                   <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
                 </div>
               )}
 
+              {/* NOT FOUND */}
               {!loading && searched && !tagData && (
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>TrustTag not found</AlertTitle>
                   <AlertDescription>
-                    We could not find a TrustTag with that ID.
+                    No verified record exists for this TrustTag ID. Double-check the ID or request a valid tag.
                   </AlertDescription>
                 </Alert>
               )}
 
+              {/* SUCCESS */}
               {!loading && tagData && (
-                <div className="space-y-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">Skill:</span>{" "}
-                    <span className="font-semibold">{tagData.skillName}</span>
+                <div className="space-y-4 text-sm border rounded-lg p-4 bg-white">
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="font-semibold text-lg">
+                      {tagData.skillName}
+                    </div>
+                    <Badge variant={getStatusVariant(tagData.status)}>
+                      {tagData.status}
+                    </Badge>
                   </div>
 
                   <div>
@@ -137,20 +156,17 @@ export default function VerifyPage() {
                   </div>
 
                   <div>
-                    <span className="text-gray-500">Score:</span>{" "}
+                    <span className="text-gray-500">Assessment Score:</span>{" "}
                     {tagData.assessmentScorePercent}%
                   </div>
 
                   <div>
-                    <span className="text-gray-500">Evidence Count:</span>{" "}
-                    {tagData.evidenceCount}
+                    <span className="text-gray-500">Evidence Submitted:</span>{" "}
+                    {tagData.evidenceCount} items
                   </div>
 
-                  <div>
-                    <span className="text-gray-500">Status:</span>{" "}
-                    <Badge variant={getStatusVariant(tagData.status)}>
-                      {tagData.status}
-                    </Badge>
+                  <div className="text-xs text-gray-400 pt-2 border-t">
+                    Verified through ProofMode assessment and evidence validation.
                   </div>
                 </div>
               )}
