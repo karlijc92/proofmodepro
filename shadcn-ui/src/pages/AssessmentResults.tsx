@@ -1,10 +1,13 @@
-import { useLocation, Link, useParams } from 'react-router-dom';
+import { useLocation, Link, useParams, useNavigate } from 'react-router-dom';
 import { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Award } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+
+// ✅ ADD THESE IMPORTS (your backend logic)
+import { processProofModeSubmission } from '@/data/proofmodeProcessor';
 
 interface AssessmentAnswer {
   questionId: string;
@@ -41,6 +44,7 @@ interface UploadedEvidenceItem {
 export default function AssessmentResultsPage() {
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
   if (!location.state) {
     return (
@@ -53,7 +57,7 @@ export default function AssessmentResultsPage() {
     );
   }
 
-  const { answers, assessment } = location.state as {
+  const { answers, assessment, uploadedEvidence } = location.state as {
     answers: AssessmentAnswer[];
     assessment: AssessmentData;
     uploadedEvidence?: UploadedEvidenceItem[];
@@ -68,6 +72,30 @@ export default function AssessmentResultsPage() {
 
   const score = Math.round((correctAnswersCount / assessment.questions.length) * 100);
   const passed = score >= 80;
+
+  // ✅ THIS IS THE FIX — BUTTON HANDLER
+  const handleUnlockTrustTag = () => {
+    try {
+      const submissionResult = processProofModeSubmission({
+        profileId: 'guest-user', // temp until auth added
+        skillCode: id || 'unknown-skill',
+        answers: answers.reduce((acc, a) => {
+          acc[a.questionId] = a.answerId;
+          return acc;
+        }, {} as Record<string, string>),
+        evidenceItems: uploadedEvidence || [],
+        submittedAt: new Date().toISOString()
+      });
+
+      console.log('TrustTag Result:', submissionResult);
+
+      // ✅ redirect AFTER save
+      navigate('/profile-preview');
+    } catch (err) {
+      console.error('TrustTag creation failed:', err);
+      alert('Something went wrong creating your TrustTag');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -99,7 +127,10 @@ export default function AssessmentResultsPage() {
                   </p>
 
                   <div className="mt-6 space-y-3">
-                    <Button className="w-full">
+                    <Button
+                      className="w-full"
+                      onClick={handleUnlockTrustTag}
+                    >
                       Unlock Your TrustTag
                     </Button>
 
