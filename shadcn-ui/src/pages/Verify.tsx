@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, ShieldCheck, ShieldX, BadgeCheck } from "lucide-react";
+import {
+  Search,
+  ShieldCheck,
+  ShieldX,
+  BadgeCheck,
+  Clock3,
+} from "lucide-react";
 
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -10,6 +16,32 @@ import { Input } from "@/components/ui/input";
 import { getTrustTagById } from "@/data/proofmodeStore";
 
 type VerificationState = "idle" | "found" | "not_found";
+
+const formatStatus = (value?: string) => {
+  if (!value) return "Unknown";
+
+  return value
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const formatDateSafe = (value?: string) => {
+  if (!value) return "Not issued yet";
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "Not issued yet";
+  }
+
+  return parsed.toLocaleDateString();
+};
+
+const isFinalVerifiedStatus = (status?: string) => {
+  if (!status) return false;
+
+  const normalized = status.trim().toLowerCase();
+  return normalized === "verified" || normalized === "active" || normalized === "issued";
+};
 
 const Verify = () => {
   const [searchParams] = useSearchParams();
@@ -94,13 +126,30 @@ const Verify = () => {
       );
     }
 
+    const finalVerified = isFinalVerifiedStatus(verifiedRecord.status);
+    const displayStatus = formatStatus(verifiedRecord.status);
+    const expiresDisplay = finalVerified
+      ? formatDateSafe(verifiedRecord.expiresAt)
+      : "Will be set after final issuance";
+
     return (
       <Card className="border-primary/20 shadow-sm">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <BadgeCheck className="h-5 w-5 text-primary" />
-            <CardTitle className="text-xl">TrustTag Verified</CardTitle>
+            {finalVerified ? (
+              <BadgeCheck className="h-5 w-5 text-primary" />
+            ) : (
+              <Clock3 className="h-5 w-5 text-primary" />
+            )}
+            <CardTitle className="text-xl">
+              {finalVerified ? "TrustTag Verified" : "TrustTag Found"}
+            </CardTitle>
           </div>
+          <p className="text-sm text-muted-foreground">
+            {finalVerified
+              ? "This TrustTag has been issued and is currently verifiable."
+              : "This TrustTag record exists, but it is not yet in a final issued state."}
+          </p>
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -125,9 +174,7 @@ const Verify = () => {
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 Status
               </p>
-              <p className="mt-1 font-medium capitalize">
-                {verifiedRecord.status}
-              </p>
+              <p className="mt-1 font-medium">{displayStatus}</p>
             </div>
 
             <div className="rounded-lg border bg-background p-4">
@@ -150,9 +197,7 @@ const Verify = () => {
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 Expires
               </p>
-              <p className="mt-1 font-medium">
-                {new Date(verifiedRecord.expiresAt).toLocaleDateString()}
-              </p>
+              <p className="mt-1 font-medium">{expiresDisplay}</p>
             </div>
           </div>
 
