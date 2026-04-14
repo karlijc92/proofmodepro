@@ -4,7 +4,6 @@ import { Search, ShieldCheck, ShieldX, BadgeCheck } from "lucide-react";
 
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import DisclaimerFooter from "@/components/DisclaimerFooter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,6 +21,7 @@ const Verify = () => {
     useState<VerificationState>("idle");
 
   const normalizedInput = useMemo(() => trustTagId.trim(), [trustTagId]);
+
   const verifiedRecord = useMemo(() => {
     if (!searchedId) return null;
     return getTrustTagById(searchedId);
@@ -109,7 +109,7 @@ const Verify = () => {
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 TrustTag ID
               </p>
-              <p className="mt-1 font-medium break-all">
+              <p className="mt-1 break-all font-medium">
                 {verifiedRecord.trustTagId}
               </p>
             </div>
@@ -209,7 +209,6 @@ const Verify = () => {
         </div>
       </main>
 
-      <DisclaimerFooter />
       <Footer />
     </div>
   );
