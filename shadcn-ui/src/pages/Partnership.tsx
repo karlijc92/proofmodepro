@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Building2, Globe2, Handshake, Loader2, Users } from 'lucide-react';
 
@@ -94,24 +94,52 @@ type FormState = {
   message: string;
 };
 
+const partnerTypeAliases: Record<string, PartnerTypeKey> = {
+  enterprise: 'enterprise',
+  employer: 'enterprise',
+  employers: 'enterprise',
+  hiring: 'enterprise',
+  staffing: 'enterprise',
+  platform: 'enterprise',
+  platforms: 'enterprise',
+  business: 'enterprise',
+
+  ngo: 'ngo',
+  nonprofit: 'ngo',
+  nonprofits: 'ngo',
+  training: 'ngo',
+  academy: 'ngo',
+  academies: 'ngo',
+  bootcamp: 'ngo',
+  bootcamps: 'ngo',
+  workforce: 'ngo',
+  education: 'ngo',
+
+  government: 'government',
+  gov: 'government',
+  public: 'government',
+  'public-sector': 'government',
+  publicsector: 'government',
+  international: 'government',
+  mobility: 'government',
+};
+
+function normalizePartnerType(value: string | null): PartnerTypeKey {
+  if (!value) return 'enterprise';
+
+  const normalized = value.trim().toLowerCase();
+  return partnerTypeAliases[normalized] ?? 'enterprise';
+}
+
 export default function PartnershipPage() {
   const [searchParams] = useSearchParams();
-  const requestedType = (searchParams.get('type') || '').toLowerCase();
 
-  const initialPartnerType: PartnerTypeKey = useMemo(() => {
-    if (
-      requestedType === 'enterprise' ||
-      requestedType === 'ngo' ||
-      requestedType === 'government'
-    ) {
-      return requestedType;
-    }
-
-    return 'enterprise';
-  }, [requestedType]);
+  const requestedType = useMemo(() => {
+    return normalizePartnerType(searchParams.get('type'));
+  }, [searchParams]);
 
   const [formData, setFormData] = useState<FormState>({
-    partnershipType: initialPartnerType,
+    partnershipType: requestedType,
     name: '',
     email: '',
     organization: '',
@@ -123,6 +151,15 @@ export default function PartnershipPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [statusType, setStatusType] = useState<'success' | 'error' | ''>('');
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      partnershipType: requestedType,
+    }));
+    setStatusMessage('');
+    setStatusType('');
+  }, [requestedType]);
 
   const activePartner =
     partnerTypes.find((partner) => partner.key === formData.partnershipType) ??
