@@ -126,6 +126,7 @@ const partnerTypeAliases: Record<string, PartnerTypeKey> = {
 
 function normalizePartnerType(value: string | null): PartnerTypeKey {
   if (!value) return 'enterprise';
+
   const normalized = value.trim().toLowerCase();
   return partnerTypeAliases[normalized] ?? 'enterprise';
 }
@@ -172,11 +173,21 @@ export default function PartnershipPage() {
   };
 
   const validateForm = () => {
-    if (formData.name.trim().length < 2) return 'Please enter your full name.';
-    if (!formData.email.includes('@')) return 'Please enter a valid email address.';
-    if (formData.organization.trim().length < 2) return 'Please enter your organization name.';
-    if (formData.role.trim().length < 2) return 'Please enter your role.';
-    if (formData.message.trim().length < 10) return 'Please enter a longer message.';
+    if (formData.name.trim().length < 2) {
+      return 'Please enter your full name.';
+    }
+    if (!formData.email.includes('@')) {
+      return 'Please enter a valid email address.';
+    }
+    if (formData.organization.trim().length < 2) {
+      return 'Please enter your organization name.';
+    }
+    if (formData.role.trim().length < 2) {
+      return 'Please enter your role.';
+    }
+    if (formData.message.trim().length < 10) {
+      return 'Please enter a longer message.';
+    }
     return '';
   };
 
@@ -206,16 +217,24 @@ export default function PartnershipPage() {
         message: formData.message.trim(),
       };
 
-      const { error } = await supabase
+      console.log('Submitting partnership inquiry:', payload);
+
+      const { data, error } = await supabase
         .from('partnership_inquiries')
-        .insert([payload]);
+        .insert([payload])
+        .select();
 
-      if (error) throw error;
+      console.log('Supabase partnership inquiry response:', { data, error });
 
-      // email send (no UI change)
+      if (error) {
+        throw error;
+      }
+
       await fetch('/api/send-partnership-email', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(payload),
       });
 
@@ -223,7 +242,7 @@ export default function PartnershipPage() {
       setStatusMessage('Your inquiry was submitted successfully.');
 
       setFormData((prev) => ({
-        ...prev,
+        partnershipType: prev.partnershipType,
         name: '',
         email: '',
         organization: '',
@@ -232,9 +251,9 @@ export default function PartnershipPage() {
         message: '',
       }));
     } catch (error) {
-      console.error(error);
+      console.error('Partnership inquiry submission error:', error);
       setStatusType('error');
-      setStatusMessage('Submission failed. Please try again.');
+      setStatusMessage('Submission failed. Please check the browser console and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -246,72 +265,203 @@ export default function PartnershipPage() {
 
       <main className="flex-grow container mx-auto px-6 py-12">
         <div className="max-w-6xl mx-auto space-y-8">
-
           <div className="text-center max-w-3xl mx-auto">
             <h1 className="text-4xl font-bold tracking-tight mb-4">Partnerships</h1>
             <p className="text-lg text-muted-foreground">
-              Explore how ProofModePro can support employers, organizations, and institutions.
+              Explore how ProofModePro can support employers, organizations, programs,
+              and institutions that want stronger skill trust, clearer verification,
+              and scalable workforce credibility.
             </p>
           </div>
 
-          {/* TOP CARDS (RESTORED) */}
           <div className="grid md:grid-cols-3 gap-6">
             {partnerTypes.map((partner) => {
               const Icon = partner.icon;
+              const isActive = activePartner.key === partner.key;
+
               return (
-                <div key={partner.key}>
-                  <Card className="h-full hover:shadow-md">
+                <button
+                  key={partner.key}
+                  type="button"
+                  onClick={() => updateField('partnershipType', partner.key)}
+                  className="text-left"
+                >
+                  <Card
+                    className={`h-full transition-all ${
+                      isActive ? 'ring-2 ring-primary shadow-md' : 'hover:shadow-md'
+                    }`}
+                  >
                     <CardHeader>
-                      <Icon className="h-8 w-8 mb-3 text-primary" />
-                      <CardTitle>{partner.label}</CardTitle>
-                      <CardDescription>{partner.shortDescription}</CardDescription>
+                      <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                        <Icon className="h-6 w-6 text-primary" />
+                      </div>
+                      <CardTitle className="text-2xl">{partner.label}</CardTitle>
+                      <CardDescription className="text-base">
+                        {partner.shortDescription}
+                      </CardDescription>
                     </CardHeader>
                   </Card>
-                </div>
+                </button>
               );
             })}
           </div>
 
-          {/* DETAIL + FORM (RESTORED) */}
           <div className="grid lg:grid-cols-2 gap-8 items-start">
-
-            <Card>
+            <Card className="h-full">
               <CardHeader>
-                <CardTitle className="text-2xl">{activePartner.label}</CardTitle>
-                <CardDescription>{activePartner.headline}</CardDescription>
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 mb-3">
+                  <activePartner.icon className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle className="text-3xl">{activePartner.label}</CardTitle>
+                <CardDescription className="text-base">
+                  {activePartner.headline}
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="mb-4">{activePartner.description}</p>
-                {activePartner.offers.map((o) => <p key={o}>• {o}</p>)}
+
+              <CardContent className="space-y-6">
+                <p className="text-muted-foreground leading-7">
+                  {activePartner.description}
+                </p>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">What we offer</h3>
+                  <div className="space-y-2">
+                    {activePartner.offers.map((item) => (
+                      <div key={item} className="flex items-start gap-3">
+                        <Handshake className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                        <p className="text-sm text-muted-foreground">{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Common use cases</h3>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {activePartner.useCases.map((item) => (
+                      <div
+                        key={item}
+                        className="rounded-lg border bg-background px-4 py-3 text-sm text-muted-foreground"
+                      >
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Request Partnership Details</CardTitle>
+                <CardTitle className="text-3xl">Request Partnership Details</CardTitle>
+                <CardDescription className="text-base">
+                  Share your information and a few details about your organization so we
+                  can review the fit and follow up.
+                </CardDescription>
               </CardHeader>
+
               <CardContent>
+                {statusMessage && (
+                  <div
+                    className={`mb-6 rounded-lg border px-4 py-3 text-sm ${
+                      statusType === 'success'
+                        ? 'border-green-200 bg-green-50 text-green-800'
+                        : 'border-red-200 bg-red-50 text-red-800'
+                    }`}
+                  >
+                    {statusMessage}
+                  </div>
+                )}
 
-                {statusMessage && <div>{statusMessage}</div>}
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Partnership Type</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {partnerTypes.map((partner) => {
+                        const isSelected = formData.partnershipType === partner.key;
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <Input value={formData.name} onChange={(e)=>updateField('name',e.target.value)} placeholder="Name"/>
-                  <Input value={formData.email} onChange={(e)=>updateField('email',e.target.value)} placeholder="Email"/>
-                  <Input value={formData.organization} onChange={(e)=>updateField('organization',e.target.value)} placeholder="Organization"/>
-                  <Input value={formData.role} onChange={(e)=>updateField('role',e.target.value)} placeholder="Role"/>
-                  <Input value={formData.website} onChange={(e)=>updateField('website',e.target.value)} placeholder="Website"/>
-                  <Textarea value={formData.message} onChange={(e)=>updateField('message',e.target.value)} placeholder="Message"/>
+                        return (
+                          <button
+                            key={partner.key}
+                            type="button"
+                            onClick={() => updateField('partnershipType', partner.key)}
+                            className={`rounded-lg border px-4 py-3 text-sm font-medium transition-all ${
+                              isSelected
+                                ? 'border-primary bg-primary/5 text-primary'
+                                : 'border-border bg-background text-foreground hover:border-primary/40'
+                            }`}
+                          >
+                            {partner.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="animate-spin"/> : 'Submit'}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Full Name</label>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) => updateField('name', e.target.value)}
+                      placeholder="Jane Smith"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Email Address</label>
+                    <Input
+                      value={formData.email}
+                      onChange={(e) => updateField('email', e.target.value)}
+                      placeholder="you@organization.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Organization</label>
+                    <Input
+                      value={formData.organization}
+                      onChange={(e) => updateField('organization', e.target.value)}
+                      placeholder="Your Organization"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Your Role</label>
+                    <Input
+                      value={formData.role}
+                      onChange={(e) => updateField('role', e.target.value)}
+                      placeholder="Director, Program Lead, Founder, Hiring Manager"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Website</label>
+                    <Input
+                      value={formData.website}
+                      onChange={(e) => updateField('website', e.target.value)}
+                      placeholder="https://yourorganization.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Tell Us About Your Interest</label>
+                    <Textarea
+                      rows={6}
+                      className="resize-none"
+                      value={formData.message}
+                      onChange={(e) => updateField('message', e.target.value)}
+                      placeholder="Tell us what your organization does, what type of partnership you are interested in, how many people or users you may want to support, and what kind of outcome you are looking for."
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isLoading ? 'Submitting...' : 'Submit Partnership Inquiry'}
                   </Button>
                 </form>
-
               </CardContent>
             </Card>
-
           </div>
-
         </div>
       </main>
 
