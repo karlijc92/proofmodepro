@@ -11,10 +11,10 @@ export default async function handler(req, res) {
     const { name, email, organization, role, website, partnership_type, message } = req.body;
 
     const response = await resend.emails.send({
-      from: 'ProofMode <proofmodepro365@gmail.com>',
+      from: 'ProofMode <hello@proofmodepro.com>',
       to: 'proofmodepro365@gmail.com',
-      subject: 'New Partnership Inquiry',
       reply_to: email,
+      subject: 'New Partnership Inquiry',
       html: `
         <h2>New Partnership Inquiry</h2>
         <p><strong>Name:</strong> ${name}</p>
@@ -22,17 +22,20 @@ export default async function handler(req, res) {
         <p><strong>Organization:</strong> ${organization}</p>
         <p><strong>Role:</strong> ${role}</p>
         <p><strong>Website:</strong> ${website || 'N/A'}</p>
-        <p><strong>Type:</strong> ${partnership_type}</p>
+        <p><strong>Partnership Type:</strong> ${partnership_type}</p>
         <p><strong>Message:</strong></p>
         <p>${message}</p>
       `,
     });
 
-    console.log('Resend response:', response);
+    console.log('Resend success:', response);
 
     return res.status(200).json({ success: true, response });
   } catch (error) {
-    console.error('Email send failed:', error);
-    return res.status(500).json({ error: 'Email failed' });
+    console.error('Resend error:', error);
+    return res.status(500).json({
+      error: 'Email failed',
+      details: error?.message || error,
+    });
   }
 }
