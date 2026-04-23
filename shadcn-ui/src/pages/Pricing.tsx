@@ -10,9 +10,9 @@ export default function PricingPage() {
 
       <main className="flex-grow container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-4xl font-bold mb-4">Get Verified with TrustTags</h1>
+          <h1 className="text-4xl font-bold mb-4">Turn Your Skills Into Proof</h1>
           <p className="text-gray-600 mb-10">
-            Turn your real-world skills into verified, employer-trusted credentials.
+            Get verified, get trusted, and get hired faster — even without traditional credentials.
           </p>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -26,15 +26,19 @@ export default function PricingPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                <p className="text-sm mb-4">
+                  Prove one skill you already have and turn it into a verified credential employers can trust.
+                </p>
+
                 <ul className="text-left space-y-2 mb-6 text-sm">
-                  <li>✔ 1 Verified Skill Certification</li>
-                  <li>✔ Employer Verification ID</li>
-                  <li>✔ Public Verification Page</li>
-                  <li>✔ Lifetime Access</li>
+                  <li>✔ 1 verified skill certification</li>
+                  <li>✔ unique TrustTag ID employers can check</li>
+                  <li>✔ public verification page</li>
+                  <li>✔ lifetime access — no expiration</li>
                 </ul>
 
                 <a href="https://buy.stripe.com/3cI14ogoZ8cyaWW1VteME06">
-                  <Button className="w-full">Unlock TrustTag</Button>
+                  <Button className="w-full">Unlock Your TrustTag</Button>
                 </a>
               </CardContent>
             </Card>
@@ -48,15 +52,19 @@ export default function PricingPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                <p className="text-sm mb-4">
+                  Show multiple skills and increase your chances of getting hired across different roles.
+                </p>
+
                 <ul className="text-left space-y-2 mb-6 text-sm">
-                  <li>✔ 3 Verified Skill Certifications</li>
-                  <li>✔ Save vs single purchases</li>
-                  <li>✔ Ideal for multi-skill workers</li>
-                  <li>✔ Lifetime Access</li>
+                  <li>✔ verify 3 different skills</li>
+                  <li>✔ stronger profile for employers</li>
+                  <li>✔ better value than single purchases</li>
+                  <li>✔ lifetime access</li>
                 </ul>
 
                 <a href="https://buy.stripe.com/14A7sM7St3Wi9SS1VteME07">
-                  <Button className="w-full">Get Bundle</Button>
+                  <Button className="w-full">Get 3 TrustTags</Button>
                 </a>
               </CardContent>
             </Card>
@@ -70,11 +78,15 @@ export default function PricingPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                <p className="text-sm mb-4">
+                  Build a complete, powerful profile that shows everything you can do.
+                </p>
+
                 <ul className="text-left space-y-2 mb-6 text-sm">
-                  <li>✔ 5 Verified Skill Certifications</li>
-                  <li>✔ Best value per TrustTag</li>
-                  <li>✔ Build a full verified profile</li>
-                  <li>✔ Lifetime Access</li>
+                  <li>✔ verify 5 skills</li>
+                  <li>✔ best value per TrustTag</li>
+                  <li>✔ stand out instantly to employers</li>
+                  <li>✔ lifetime access</li>
                 </ul>
 
                 <a href="https://buy.stripe.com/14A14o0q1eAW0ii0RpeME08">
@@ -92,14 +104,19 @@ export default function PricingPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                <p className="text-sm mb-4">
+                  Keep growing your verified profile over time and stay competitive in the job market.
+                </p>
+
                 <ul className="text-left space-y-2 mb-6 text-sm">
-                  <li>✔ Ongoing skill verification access</li>
-                  <li>✔ Continuous profile growth</li>
-                  <li>✔ Ideal for freelancers & workers</li>
+                  <li>✔ ongoing access to new TrustTags</li>
+                  <li>✔ continuously build your profile</li>
+                  <li>✔ ideal for freelancers and job seekers</li>
+                  <li>✔ stay relevant as your skills grow</li>
                 </ul>
 
                 <a href="https://buy.stripe.com/5kQ6oIa0BeAWaWW8jReME09">
-                  <Button className="w-full">Start Plan</Button>
+                  <Button className="w-full">Start Career Plan</Button>
                 </a>
               </CardContent>
             </Card>
@@ -113,10 +130,15 @@ export default function PricingPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                <p className="text-sm mb-4">
+                  Quickly verify workers, reduce hiring risk, and build trust with your team and clients.
+                </p>
+
                 <ul className="text-left space-y-2 mb-6 text-sm">
-                  <li>✔ Verify multiple workers</li>
-                  <li>✔ Hiring trust validation</li>
-                  <li>✔ Scale workforce verification</li>
+                  <li>✔ verify multiple workers</li>
+                  <li>✔ confirm real skills before hiring</li>
+                  <li>✔ reduce risk and bad hires</li>
+                  <li>✔ scale trusted workforce quickly</li>
                 </ul>
 
                 <a href="https://buy.stripe.com/eVq8wQfkV9gC2qqeIfeME0a">
@@ -127,7 +149,6 @@ export default function PricingPage() {
 
           </div>
 
-          {/* Policy */}
           <p className="text-xs text-gray-500 mt-10">
             All purchases are final. Due to the nature of digital verification services, no refunds will be issued.
           </p>
