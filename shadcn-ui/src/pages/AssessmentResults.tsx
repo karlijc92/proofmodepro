@@ -6,9 +6,6 @@ import { CheckCircle, XCircle, Award } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 
-// ✅ ADD THESE IMPORTS (your backend logic)
-import { processProofModeSubmission } from '@/data/proofmodeProcessor';
-
 interface AssessmentAnswer {
   questionId: string;
   answerId: string;
@@ -73,28 +70,9 @@ export default function AssessmentResultsPage() {
   const score = Math.round((correctAnswersCount / assessment.questions.length) * 100);
   const passed = score >= 80;
 
-  // ✅ THIS IS THE FIX — BUTTON HANDLER
-  const handleUnlockTrustTag = () => {
-    try {
-      const submissionResult = processProofModeSubmission({
-        profileId: 'guest-user', // temp until auth added
-        skillCode: id || 'unknown-skill',
-        answers: answers.reduce((acc, a) => {
-          acc[a.questionId] = a.answerId;
-          return acc;
-        }, {} as Record<string, string>),
-        evidenceItems: uploadedEvidence || [],
-        submittedAt: new Date().toISOString()
-      });
-
-      console.log('TrustTag Result:', submissionResult);
-
-      // ✅ redirect AFTER save
-      navigate('/profile-preview');
-    } catch (err) {
-      console.error('TrustTag creation failed:', err);
-      alert('Something went wrong creating your TrustTag');
-    }
+  // ✅ NEW: Redirect to pricing instead of creating TrustTag
+  const handleContinueToPricing = () => {
+    navigate('/pricing');
   };
 
   return (
@@ -129,13 +107,13 @@ export default function AssessmentResultsPage() {
                   <div className="mt-6 space-y-3">
                     <Button
                       className="w-full"
-                      onClick={handleUnlockTrustTag}
+                      onClick={handleContinueToPricing}
                     >
-                      Unlock Your TrustTag
+                      Continue to Unlock Your TrustTag
                     </Button>
 
                     <p className="text-xs text-gray-500">
-                      One-time fee to generate your verified credential
+                      One-time fee required to generate your verified credential
                     </p>
                   </div>
                 </>
