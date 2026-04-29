@@ -22,8 +22,6 @@ import AssessmentPage from "./pages/Assessment";
 import AssessmentResultsPage from "./pages/AssessmentResults";
 import ProofUploadPage from "./pages/ProofUpload";
 
-import RequireAuth from "./components/RequireAuth";
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -36,14 +34,7 @@ const App = () => (
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
 
-          <Route
-            path="/profile"
-            element={
-              <RequireAuth>
-                <Profile />
-              </RequireAuth>
-            }
-          />
+          <Route path="/profile" element={<Profile />} />
 
           <Route path="/profile-preview" element={<ProfilePreview />} />
           <Route path="/verify" element={<Verify />} />
