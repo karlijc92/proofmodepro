@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -6,79 +6,48 @@ import {
   proofModeCategories,
   proofModeSkills,
   trustTagRules,
-  generateProfileId,
 } from "@/data/proofmodeConfig";
-import { proofModeDebugSummary } from "@/data/proofmodeDebug";
 
-declare global {
-  interface Window {
-    $memberstackDom?: {
-      getCurrentMember: () => Promise<{ data: any }>;
-      openModal: (type: "LOGIN" | "SIGNUP" | "PROFILE", options?: any) => Promise<void>;
-    };
-  }
-}
+type ProfileType = "regular" | "student" | "business" | "organization";
 
-function memberIdToProfileNumber(memberId: string) {
-  if (!memberId) return 1001;
-
-  const numbersOnly = memberId.replace(/\D/g, "");
-
-  if (numbersOnly) {
-    return Number(numbersOnly.slice(0, 6)) || 1001;
-  }
-
-  let hash = 0;
-  for (let i = 0; i < memberId.length; i++) {
-    hash = (hash * 31 + memberId.charCodeAt(i)) % 1000000;
-  }
-
-  return hash || 1001;
-}
+const profileTypes = [
+  {
+    id: "regular" as ProfileType,
+    title: "Regular Profile",
+    label: "Free",
+    description:
+      "For individuals who want to store TrustTags, show verified skills, and improve job readiness.",
+  },
+  {
+    id: "student" as ProfileType,
+    title: "Student Profile",
+    label: "Subscription",
+    description:
+      "For students who need employment support, interview practice, quizzes, and career tools.",
+  },
+  {
+    id: "business" as ProfileType,
+    title: "Business / Employer Profile",
+    label: "Subscription",
+    description:
+      "For employers who want to manage employee profiles, review TrustTags, and support workforce development.",
+  },
+  {
+    id: "organization" as ProfileType,
+    title: "Government / Organization Profile",
+    label: "Subscription",
+    description:
+      "For organizations managing participants, workforce programs, verification, and readiness tracking.",
+  },
+];
 
 export default function Profile() {
-  const [loading, setLoading] = useState(true);
-  const [member, setMember] = useState<any>(null);
+  const [selectedProfile, setSelectedProfile] = useState<ProfileType>("regular");
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function run() {
-      if (!window.$memberstackDom) {
-        await new Promise((r) => setTimeout(r, 600));
-      }
-
-      if (!window.$memberstackDom) {
-        if (!cancelled) setLoading(false);
-        return;
-      }
-
-      const { data } = await window.$memberstackDom.getCurrentMember();
-
-      if (cancelled) return;
-
-      if (!data) {
-        setMember(null);
-        setLoading(false);
-        await window.$memberstackDom.openModal("LOGIN");
-        return;
-      }
-
-      setMember(data);
-      setLoading(false);
-    }
-
-    run();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const proofModeProfileId = useMemo(() => {
-    if (!member?.id) return "—";
-    return generateProfileId(memberIdToProfileNumber(member.id));
-  }, [member]);
+  const selected = useMemo(
+    () => profileTypes.find((profile) => profile.id === selectedProfile),
+    [selectedProfile]
+  );
 
   const totalCategories = proofModeCategories.length;
   const totalSkills = proofModeSkills.length;
@@ -88,85 +57,266 @@ export default function Profile() {
       <Navigation />
 
       <main className="container mx-auto px-4 py-10">
-        {loading ? (
-          <div className="text-sm text-muted-foreground">Loading…</div>
-        ) : !window.$memberstackDom ? (
-          <div className="rounded-lg border p-6">
-            <h1 className="text-xl font-semibold">Memberstack not loaded</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Your Memberstack script isn’t loading on this page. Once it loads, this page will automatically show the login modal for logged-out users.
-            </p>
-          </div>
-        ) : !member ? (
-          <div className="rounded-lg border p-6">
-            <h1 className="text-xl font-semibold">Please log in</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              If the login popup didn’t appear, click below.
-            </p>
-            <div className="mt-4 flex gap-2">
-              <Button onClick={() => window.$memberstackDom?.openModal("LOGIN")}>
-                Open Login
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => window.$memberstackDom?.openModal("SIGNUP")}
-              >
-                Open Signup
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-lg border p-6">
-            <h1 className="text-2xl font-semibold">Your Profile</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              You’re logged in.
-            </p>
+        <div className="mb-8">
+          <p className="text-sm font-medium text-primary">ProofMode Profile Hub</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight">
+            Build, store, and strengthen verified skill profiles.
+          </h1>
+          <p className="mt-3 max-w-3xl text-muted-foreground">
+            This hub separates regular profiles from subscription-based profiles.
+            Regular profiles focus on TrustTags and basic job-readiness tools.
+            Student, business, and organization profiles include expanded tools
+            that can be unlocked through the correct plan.
+          </p>
+        </div>
 
-            <div className="mt-6 grid gap-3 text-sm">
-              <div>
-                <span className="font-medium">Email:</span>{" "}
-                {member?.email || "—"}
+        <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {profileTypes.map((profile) => (
+            <button
+              key={profile.id}
+              onClick={() => setSelectedProfile(profile.id)}
+              className={`rounded-xl border p-5 text-left transition hover:border-primary ${
+                selectedProfile === profile.id
+                  ? "border-primary bg-primary/5"
+                  : "bg-background"
+              }`}
+            >
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="font-semibold">{profile.title}</h2>
+                <span
+                  className={`rounded-full px-2 py-1 text-xs font-medium ${
+                    profile.label === "Free"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-yellow-100 text-yellow-800"
+                  }`}
+                >
+                  {profile.label}
+                </span>
               </div>
-              <div>
-                <span className="font-medium">Member ID:</span>{" "}
-                {member?.id || "—"}
-              </div>
-              <div>
-                <span className="font-medium">ProofMode Profile ID:</span>{" "}
-                {proofModeProfileId}
-              </div>
-              <div>
-                <span className="font-medium">Launch Categories:</span>{" "}
-                {totalCategories}
-              </div>
-              <div>
-                <span className="font-medium">Launch Skills:</span>{" "}
-                {totalSkills}
-              </div>
-              <div>
-                <span className="font-medium">TrustTag Passing Score:</span>{" "}
-                {trustTagRules.passingScorePercent}%
-              </div>
-              <div>
-                <span className="font-medium">Minimum Evidence Uploads:</span>{" "}
-                {trustTagRules.minimumEvidenceUploads}
-              </div>
+              <p className="text-sm text-muted-foreground">
+                {profile.description}
+              </p>
+            </button>
+          ))}
+        </section>
+
+        <section className="mt-8 rounded-xl border p-6">
+          <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
+            <div>
+              <h2 className="text-2xl font-semibold">{selected?.title}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {selected?.description}
+              </p>
             </div>
 
-            <div className="mt-6 rounded-lg border p-4 text-xs text-muted-foreground">
-              <div className="mb-2 font-medium">ProofMode Internal Debug</div>
-              <pre className="whitespace-pre-wrap break-words">
-                {JSON.stringify(proofModeDebugSummary, null, 2)}
-              </pre>
-            </div>
-
-            <div className="mt-6">
-              <Button onClick={() => window.$memberstackDom?.openModal("PROFILE")}>
-                Manage Account
-              </Button>
-            </div>
+            {selected?.label === "Subscription" ? (
+              <Button variant="outline">Manage Subscription</Button>
+            ) : (
+              <Button variant="outline">Free Profile</Button>
+            )}
           </div>
-        )}
+
+          {selectedProfile === "regular" && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-lg border p-5">
+                <h3 className="font-semibold">TrustTag Wallet</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  This section will store the user’s issued TrustTags after real
+                  login/signup is connected. Each TrustTag will show skill name,
+                  verification status, evidence status, and expiration date.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-5">
+                <h3 className="font-semibold">Verification Status</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Users will be able to see which TrustTags are active, pending,
+                  need more evidence, or expired.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-5">
+                <h3 className="font-semibold">Basic Job Readiness</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Free profile tools can include skill summaries, profile
+                  completion guidance, and basic next-step recommendations.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-5">
+                <h3 className="font-semibold">ProofMode Account Setup</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Real profile ownership will be connected after login/signup is
+                  added. No fake or temporary profile IDs are being used.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {selectedProfile === "student" && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-lg border p-5">
+                <h3 className="font-semibold">Student Career Hub</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Includes job-readiness support for students, including career
+                  preparation, skill-building, and employment guidance.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-5">
+                <h3 className="font-semibold">Interview Prep</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Students can practice interview questions, prepare answers, and
+                  build confidence before applying for jobs.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-5">
+                <h3 className="font-semibold">Role Play Practice</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Future tools can simulate workplace conversations, interviews,
+                  and customer-service scenarios.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-5">
+                <h3 className="font-semibold">Quizzes and Tests</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Students can take readiness quizzes and skill checks to improve
+                  employability.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-5 md:col-span-2">
+                <h3 className="font-semibold">Subscription Access</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Student tools are subscription-based and will unlock after plan
+                  status is connected.
+                </p>
+                <button className="mt-3 text-sm font-medium text-primary underline">
+                  Unsubscribe or manage student plan
+                </button>
+              </div>
+            </div>
+          )}
+
+          {selectedProfile === "business" && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-lg border p-5">
+                <h3 className="font-semibold">Company Profile</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Businesses can manage company information, hiring needs, and
+                  workforce verification tools.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-5">
+                <h3 className="font-semibold">Employee Profiles</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Employers will be able to manage individual employee profiles
+                  and review employee TrustTags.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-5">
+                <h3 className="font-semibold">TrustTag Review</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Businesses can verify worker skills, see proof status, and
+                  review skill-readiness information.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-5">
+                <h3 className="font-semibold">Hiring and Workforce Tools</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Future tools can help employers match roles to verified skills
+                  and identify training needs.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-5 md:col-span-2">
+                <h3 className="font-semibold">Subscription Access</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Business tools are subscription-based and will unlock after
+                  business plan status is connected.
+                </p>
+                <button className="mt-3 text-sm font-medium text-primary underline">
+                  Unsubscribe or manage business plan
+                </button>
+              </div>
+            </div>
+          )}
+
+          {selectedProfile === "organization" && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-lg border p-5">
+                <h3 className="font-semibold">Program Dashboard</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Organizations can eventually track participants, programs,
+                  skill progress, and verification outcomes.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-5">
+                <h3 className="font-semibold">Participant Tracking</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Government and organization users can manage participants and
+                  connect them to workforce readiness tools.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-5">
+                <h3 className="font-semibold">TrustTag Verification Tools</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Organizations can verify participant skills and support
+                  placement into jobs, training, or services.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-5">
+                <h3 className="font-semibold">Reporting Tools</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Future reporting can show program impact, verified skills,
+                  readiness levels, and placement progress.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-5 md:col-span-2">
+                <h3 className="font-semibold">Organization Access</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Advanced organization tools will unlock once account type,
+                  plan status, and permissions are connected.
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="mt-8 grid gap-4 md:grid-cols-4">
+          <div className="rounded-lg border p-5">
+            <p className="text-sm text-muted-foreground">Launch Categories</p>
+            <p className="mt-2 text-2xl font-semibold">{totalCategories}</p>
+          </div>
+
+          <div className="rounded-lg border p-5">
+            <p className="text-sm text-muted-foreground">Launch Skills</p>
+            <p className="mt-2 text-2xl font-semibold">{totalSkills}</p>
+          </div>
+
+          <div className="rounded-lg border p-5">
+            <p className="text-sm text-muted-foreground">Passing Score</p>
+            <p className="mt-2 text-2xl font-semibold">
+              {trustTagRules.passingScorePercent}%
+            </p>
+          </div>
+
+          <div className="rounded-lg border p-5">
+            <p className="text-sm text-muted-foreground">Evidence Uploads</p>
+            <p className="mt-2 text-2xl font-semibold">
+              {trustTagRules.minimumEvidenceUploads}
+            </p>
+          </div>
+        </section>
       </main>
 
       <Footer />
