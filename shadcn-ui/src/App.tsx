@@ -22,6 +22,7 @@ import AssessmentPage from "./pages/Assessment";
 import AssessmentResultsPage from "./pages/AssessmentResults";
 import ProofUploadPage from "./pages/ProofUpload";
 import ResumeBuilder from "./pages/ResumeBuilder";
+import ProfileTool from "./pages/ProfileTool";
 
 const queryClient = new QueryClient();
 
@@ -35,9 +36,19 @@ const App = () => (
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
 
+          {/* Profile */}
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/resume-builder" element={<ResumeBuilder />} />
 
+          {/* Profile Tools (no more 404s) */}
+          <Route path="/profile/evidence-manager" element={<ProfileTool />} />
+          <Route path="/profile/interview-prep" element={<ProfileTool />} />
+          <Route path="/profile/role-play" element={<ProfileTool />} />
+          <Route path="/profile/skill-quizzes" element={<ProfileTool />} />
+          <Route path="/profile/job-tracker" element={<ProfileTool />} />
+          <Route path="/profile/career-plan" element={<ProfileTool />} />
+
+          {/* Existing */}
           <Route path="/profile-preview" element={<ProfilePreview />} />
           <Route path="/verify" element={<Verify />} />
           <Route path="/partnership" element={<Partnership />} />
@@ -47,6 +58,8 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="/refund" element={<Refund />} />
           <Route path="/disclaimer" element={<Disclaimer />} />
+
+          {/* TrustTag Flow */}
           <Route path="/create-trust-tag" element={<CreateTrustTagPage />} />
           <Route path="/proof-upload/:id" element={<ProofUploadPage />} />
           <Route path="/assessment/:id" element={<AssessmentPage />} />
