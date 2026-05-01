@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -105,29 +106,10 @@ function OverviewTab() {
       />
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
-        <DashboardCard
-          title="TrustTag Wallet"
-          text="No TrustTags have been added yet."
-          action="Create a TrustTag"
-        />
-
-        <DashboardCard
-          title="Verified Skills"
-          text="Your verified skills will appear here after completed TrustTags are issued."
-          action="Start Verification"
-        />
-
-        <DashboardCard
-          title="Evidence / Documents"
-          text="Uploaded work samples, photos, documents, or proof files will be organized here."
-          action="Add Evidence"
-        />
-
-        <DashboardCard
-          title="Career Snapshot"
-          text="Use this section to prepare your profile for employers, clients, schools, or workforce programs."
-          action="Build Career Snapshot"
-        />
+        <DashboardCard title="TrustTag Wallet" text="No TrustTags have been added yet." action="Create a TrustTag" route="/create-trusttag" />
+        <DashboardCard title="Verified Skills" text="Your verified skills will appear here after completed TrustTags are issued." action="Start Verification" route="/create-trusttag" />
+        <DashboardCard title="Evidence / Documents" text="Uploaded work samples, photos, documents, or proof files will be organized here." action="Add Evidence" route="/proof-upload" />
+        <DashboardCard title="Career Snapshot" text="Use this section to prepare your profile for employers, clients, schools, or workforce programs." action="Build Career Snapshot" route="/contact" />
       </div>
     </div>
   );
@@ -136,35 +118,13 @@ function OverviewTab() {
 function TrustTagsTab() {
   return (
     <div>
-      <SectionHeader
-        title="TrustTags"
-        text="Create, store, and manage skill-based TrustTags connected to your profile."
-      />
+      <SectionHeader title="TrustTags" text="Create, store, and manage skill-based TrustTags connected to your profile." />
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
-        <DashboardCard
-          title="Active TrustTags"
-          text="No active TrustTags yet."
-          action="Create a TrustTag"
-        />
-
-        <DashboardCard
-          title="Pending TrustTags"
-          text="TrustTags waiting for payment, review, or evidence will appear here."
-          action="View Pending"
-        />
-
-        <DashboardCard
-          title="Needs More Evidence"
-          text="TrustTags that need more proof will appear here."
-          action="Upload Evidence"
-        />
-
-        <DashboardCard
-          title="Expired TrustTags"
-          text="Expired TrustTags will appear here so they can be renewed if needed."
-          action="View Expired"
-        />
+        <DashboardCard title="Active TrustTags" text="No active TrustTags yet." action="Create a TrustTag" route="/create-trusttag" />
+        <DashboardCard title="Pending TrustTags" text="TrustTags waiting for payment, review, or evidence will appear here." action="View Pending" route="/verify" />
+        <DashboardCard title="Needs More Evidence" text="TrustTags that need more proof will appear here." action="Upload Evidence" route="/proof-upload" />
+        <DashboardCard title="Expired TrustTags" text="Expired TrustTags will appear here so they can be renewed if needed." action="View Expired" route="/verify" />
       </div>
     </div>
   );
@@ -173,157 +133,49 @@ function TrustTagsTab() {
 function JobToolsTab() {
   return (
     <div>
-      <SectionHeader
-        title="Job Enhancement Tools"
-        text="Use these tools to strengthen your profile, prepare for work, and turn verified skills into real opportunities."
-      />
+      <SectionHeader title="Job Enhancement Tools" text="Use these tools to strengthen your profile, prepare for work, and turn verified skills into real opportunities." />
 
       <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <DashboardCard
-          title="Resume Builder"
-          text="Turn verified skills and TrustTags into resume-ready language."
-          action="Open Resume Builder"
-        />
-
-        <DashboardCard
-          title="Interview Prep"
-          text="Practice common interview questions and prepare stronger answers."
-          action="Practice Interviews"
-        />
-
-        <DashboardCard
-          title="Role Play Practice"
-          text="Practice workplace conversations, customer service situations, and job scenarios."
-          action="Start Role Play"
-        />
-
-        <DashboardCard
-          title="Skill Quizzes"
-          text="Take readiness quizzes to check where you are strong and where you need practice."
-          action="Take a Quiz"
-        />
-
-        <DashboardCard
-          title="Job Search Tracker"
-          text="Track applications, interviews, follow-ups, and next steps."
-          action="Open Tracker"
-        />
-
-        <DashboardCard
-          title="Career Plan"
-          text="Create a simple plan for improving skills, building proof, and applying for better opportunities."
-          action="Create Career Plan"
-        />
+        <DashboardCard title="Resume Builder" text="Turn verified skills and TrustTags into resume-ready language." action="Open Resume Builder" route="/contact" />
+        <DashboardCard title="Interview Prep" text="Practice common interview questions and prepare stronger answers." action="Practice Interviews" route="/contact" />
+        <DashboardCard title="Role Play Practice" text="Practice workplace conversations, customer service situations, and job scenarios." action="Start Role Play" route="/contact" />
+        <DashboardCard title="Skill Quizzes" text="Take readiness quizzes to check where you are strong and where you need practice." action="Take a Quiz" route="/create-trusttag" />
+        <DashboardCard title="Job Search Tracker" text="Track applications, interviews, follow-ups, and next steps." action="Open Tracker" route="/contact" />
+        <DashboardCard title="Career Plan" text="Create a simple plan for improving skills, building proof, and applying for better opportunities." action="Create Career Plan" route="/pricing" />
       </div>
     </div>
   );
 }
 
 function StudentTab() {
-  return (
-    <LockedArea
-      title="Student Profile"
-      text="Student profiles include extra tools for school-to-work preparation, employment help, interview practice, role play, quizzes, and resume support."
-      tools={[
-        "Student career dashboard",
-        "Interview prep",
-        "Role play practice",
-        "Job-readiness quizzes",
-        "Resume and application help",
-        "Career planning tools",
-      ]}
-      footer="Student tools require an active student subscription."
-      showUnsubscribe
-    />
-  );
+  return <LockedArea title="Student Profile" text="Student profiles include extra tools for school-to-work preparation, employment help, interview practice, role play, quizzes, and resume support." tools={["Student career dashboard", "Interview prep", "Role play practice", "Job-readiness quizzes", "Resume and application help", "Career planning tools"]} footer="Student tools require an active student subscription." showUnsubscribe />;
 }
 
 function BusinessTab() {
-  return (
-    <LockedArea
-      title="Business / Employer Profile"
-      text="Business profiles help employers manage workers, employee profiles, verified skills, TrustTags, hiring needs, and workforce development."
-      tools={[
-        "Company profile",
-        "Employee profile management",
-        "Employee TrustTag review",
-        "Hiring readiness tools",
-        "Workforce skill tracking",
-        "Team development tools",
-      ]}
-      footer="Business tools require an active business subscription."
-      showUnsubscribe
-    />
-  );
+  return <LockedArea title="Business / Employer Profile" text="Business profiles help employers manage workers, employee profiles, verified skills, TrustTags, hiring needs, and workforce development." tools={["Company profile", "Employee profile management", "Employee TrustTag review", "Hiring readiness tools", "Workforce skill tracking", "Team development tools"]} footer="Business tools require an active business subscription." showUnsubscribe />;
 }
 
 function OrganizationTab() {
-  return (
-    <LockedArea
-      title="Government / Organization Profile"
-      text="Organization profiles support programs that track participants, verify skills, monitor readiness, and support workforce placement."
-      tools={[
-        "Program dashboard",
-        "Participant tracking",
-        "TrustTag verification tools",
-        "Workforce readiness tracking",
-        "Program outcome reporting",
-        "Placement support tools",
-      ]}
-      footer="Organization tools require approved organization access."
-    />
-  );
+  return <LockedArea title="Government / Organization Profile" text="Organization profiles support programs that track participants, verify skills, monitor readiness, and support workforce placement." tools={["Program dashboard", "Participant tracking", "TrustTag verification tools", "Workforce readiness tracking", "Program outcome reporting", "Placement support tools"]} footer="Organization tools require approved organization access." />;
 }
 
 function SubscriptionTab() {
   return (
     <div>
-      <SectionHeader
-        title="Subscription Access"
-        text="Regular profiles are included. Student, business, and organization tools unlock through the correct plan or approved account type."
-      />
+      <SectionHeader title="Subscription Access" text="Regular profiles are included. Student, business, and organization tools unlock through the correct plan or approved account type." />
 
       <div className="mt-6 grid gap-4 md:grid-cols-3">
-        <PlanCard
-          title="Regular Profile"
-          status="Included"
-          text="TrustTags, verified skills, evidence, and basic job-readiness tools."
-          button="Current Plan"
-        />
-
-        <PlanCard
-          title="Student Profile"
-          status="Locked"
-          text="Interview prep, role play, quizzes, resume help, and career support."
-          button="View Student Plan"
-          showUnsubscribe
-        />
-
-        <PlanCard
-          title="Business Profile"
-          status="Locked"
-          text="Employee profiles, TrustTag review, hiring tools, and workforce management."
-          button="View Business Plan"
-          showUnsubscribe
-        />
+        <PlanCard title="Regular Profile" status="Included" text="TrustTags, verified skills, evidence, and basic job-readiness tools." button="Current Plan" />
+        <PlanCard title="Student Profile" status="Locked" text="Interview prep, role play, quizzes, resume help, and career support." button="View Student Plan" route="/pricing" showUnsubscribe />
+        <PlanCard title="Business Profile" status="Locked" text="Employee profiles, TrustTag review, hiring tools, and workforce management." button="View Business Plan" route="/pricing" showUnsubscribe />
       </div>
     </div>
   );
 }
 
-function LockedArea({
-  title,
-  text,
-  tools,
-  footer,
-  showUnsubscribe,
-}: {
-  title: string;
-  text: string;
-  tools: string[];
-  footer: string;
-  showUnsubscribe?: boolean;
-}) {
+function LockedArea({ title, text, tools, footer, showUnsubscribe }: { title: string; text: string; tools: string[]; footer: string; showUnsubscribe?: boolean }) {
+  const navigate = useNavigate();
+
   return (
     <div>
       <SectionHeader title={title} text={text} />
@@ -332,30 +184,23 @@ function LockedArea({
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
           <div>
             <p className="text-sm font-medium text-primary">Locked Access</p>
-            <h3 className="mt-1 text-xl font-semibold text-foreground">
-              Upgrade Required
-            </h3>
-            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              {footer}
-            </p>
+            <h3 className="mt-1 text-xl font-semibold text-foreground">Upgrade Required</h3>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{footer}</p>
           </div>
 
-          <Button>Unlock Tools</Button>
+          <Button onClick={() => navigate("/pricing")}>Unlock Tools</Button>
         </div>
 
         <div className="mt-6 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {tools.map((tool) => (
-            <div
-              key={tool}
-              className="rounded-xl border bg-card p-4 text-sm font-medium text-foreground"
-            >
+            <div key={tool} className="rounded-xl border bg-card p-4 text-sm font-medium text-foreground">
               {tool}
             </div>
           ))}
         </div>
 
         {showUnsubscribe && (
-          <button className="mt-5 text-sm font-medium text-primary underline">
+          <button onClick={() => navigate("/contact")} className="mt-5 text-sm font-medium text-primary underline">
             Manage or cancel subscription
           </button>
         )}
@@ -364,56 +209,38 @@ function LockedArea({
   );
 }
 
-function DashboardCard({
-  title,
-  text,
-  action,
-}: {
-  title: string;
-  text: string;
-  action: string;
-}) {
+function DashboardCard({ title, text, action, route }: { title: string; text: string; action: string; route: string }) {
+  const navigate = useNavigate();
+
   return (
     <div className="rounded-2xl border bg-background p-5">
       <h3 className="font-semibold text-foreground">{title}</h3>
       <p className="mt-2 min-h-12 text-sm text-muted-foreground">{text}</p>
-      <Button variant="outline" className="mt-4">
+      <Button variant="outline" className="mt-4" onClick={() => navigate(route)}>
         {action}
       </Button>
     </div>
   );
 }
 
-function PlanCard({
-  title,
-  status,
-  text,
-  button,
-  showUnsubscribe,
-}: {
-  title: string;
-  status: string;
-  text: string;
-  button: string;
-  showUnsubscribe?: boolean;
-}) {
+function PlanCard({ title, status, text, button, route, showUnsubscribe }: { title: string; status: string; text: string; button: string; route?: string; showUnsubscribe?: boolean }) {
+  const navigate = useNavigate();
+
   return (
     <div className="rounded-2xl border bg-background p-5">
       <div className="flex items-center justify-between gap-3">
         <h3 className="font-semibold text-foreground">{title}</h3>
-        <span className="rounded-full border px-3 py-1 text-xs text-muted-foreground">
-          {status}
-        </span>
+        <span className="rounded-full border px-3 py-1 text-xs text-muted-foreground">{status}</span>
       </div>
 
       <p className="mt-3 text-sm text-muted-foreground">{text}</p>
 
-      <Button variant="outline" className="mt-4 w-full">
+      <Button variant="outline" className="mt-4 w-full" disabled={!route} onClick={() => route && navigate(route)}>
         {button}
       </Button>
 
       {showUnsubscribe && (
-        <button className="mt-3 w-full text-sm font-medium text-primary underline">
+        <button onClick={() => navigate("/contact")} className="mt-3 w-full text-sm font-medium text-primary underline">
           Manage or cancel subscription
         </button>
       )}
