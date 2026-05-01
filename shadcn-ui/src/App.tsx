@@ -21,6 +21,7 @@ import CreateTrustTagPage from "./pages/CreateTrustTag";
 import AssessmentPage from "./pages/Assessment";
 import AssessmentResultsPage from "./pages/AssessmentResults";
 import ProofUploadPage from "./pages/ProofUpload";
+import ResumeBuilder from "./pages/ResumeBuilder";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
 
           <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/resume-builder" element={<ResumeBuilder />} />
 
           <Route path="/profile-preview" element={<ProfilePreview />} />
           <Route path="/verify" element={<Verify />} />
