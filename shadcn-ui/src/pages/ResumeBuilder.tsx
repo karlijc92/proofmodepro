@@ -65,63 +65,69 @@ export default function ResumeBuilder() {
             Resume Builder
           </h1>
           <p className="mt-3 max-w-3xl text-muted-foreground">
-            Build and save a simple resume draft connected to your ProofMode
-            profile. Later, this tool can automatically pull in verified
-            TrustTags and approved skills.
+            Build a stronger resume draft using your experience, skills, and
+            future ProofMode TrustTags. This tool helps users turn real work
+            history into employer-ready language.
           </p>
         </section>
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border bg-card p-6 shadow-sm">
+        <section className="mt-8 grid gap-6 lg:grid-cols-3">
+          <div className="rounded-2xl border bg-card p-6 shadow-sm lg:col-span-2">
             <h2 className="text-xl font-semibold text-foreground">
               Resume Details
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Fill this out once and keep improving it as your verified skills
-              grow.
+              Fill this out step by step. Use the examples if you are not sure
+              what to write.
             </p>
 
-            <div className="mt-6 space-y-4">
+            <div className="mt-6 space-y-5">
               <ResumeInput
                 label="Full Name"
                 value={resume.fullName}
                 onChange={(value) => updateField("fullName", value)}
                 placeholder="Your full name"
+                help="Use the name you want employers, clients, schools, or programs to see."
               />
 
               <ResumeInput
-                label="Headline"
+                label="Resume Headline"
                 value={resume.headline}
                 onChange={(value) => updateField("headline", value)}
-                placeholder="Example: Verified carpenter | Entry-level IT support | Skilled trades worker"
+                placeholder="Example: Verified carpentry worker | Entry-level IT support | Customer service professional"
+                help="This is a short one-line title that tells people what kind of work you do or want."
               />
 
               <ResumeTextArea
                 label="Professional Summary"
                 value={resume.summary}
                 onChange={(value) => updateField("summary", value)}
-                placeholder="Write a short summary about your skills, experience, and work goals."
+                placeholder="Example: Reliable hands-on worker with experience in home repair, customer service, and problem solving. Strong record of completing tasks, learning quickly, and working well with others."
+                help="Write 2–4 sentences about your strengths, work style, experience, and goals."
               />
 
               <ResumeTextArea
                 label="Skills"
                 value={resume.skills}
                 onChange={(value) => updateField("skills", value)}
-                placeholder="List your skills. Later this can pull from verified TrustTags."
+                placeholder="Example: Carpentry, drywall repair, customer service, scheduling, basic bookkeeping, troubleshooting, Microsoft Office"
+                help="List practical skills, software skills, trade skills, communication skills, or verified ProofMode skills."
               />
 
               <ResumeTextArea
                 label="Experience"
                 value={resume.experience}
                 onChange={(value) => updateField("experience", value)}
-                placeholder="List jobs, projects, volunteer work, freelance work, or hands-on experience."
+                placeholder={"Example:\nFreelance Repair Work — 2022–Present\n- Completed small home repair projects for clients\n- Communicated timelines, pricing, and project needs\n- Maintained quality and safety standards"}
+                help="Include jobs, freelance work, volunteer work, family business work, projects, internships, or hands-on experience."
               />
 
               <ResumeTextArea
                 label="Education / Training"
                 value={resume.education}
                 onChange={(value) => updateField("education", value)}
-                placeholder="List school, certifications, training, workshops, or self-taught learning."
+                placeholder="Example: High school diploma, trade school, online courses, certifications, workshops, self-taught training"
+                help="Add school, training, certificates, online learning, or informal skill-building."
               />
 
               <div className="flex flex-col gap-3 sm:flex-row">
@@ -133,48 +139,79 @@ export default function ResumeBuilder() {
             </div>
           </div>
 
-          <div className="rounded-2xl border bg-background p-6 shadow-sm">
+          <aside className="rounded-2xl border bg-background p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-foreground">
-              Resume Preview
+              Writing Help
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              This preview helps users see what employers, schools, or workforce
-              programs may later view.
+              Strong resumes use clear, simple proof of what you can do.
             </p>
 
-            <div className="mt-6 rounded-2xl border bg-card p-5">
-              <h3 className="text-2xl font-bold text-foreground">
-                {resume.fullName || "Your Name"}
-              </h3>
-
-              <p className="mt-2 text-sm font-medium text-primary">
-                {resume.headline || "Your resume headline will appear here"}
-              </p>
-
-              <PreviewSection
-                title="Professional Summary"
-                text={resume.summary}
-                emptyText="Your summary will appear here."
+            <div className="mt-5 space-y-4 text-sm">
+              <TipCard
+                title="Use action words"
+                text="Try words like managed, repaired, assisted, organized, trained, built, cleaned, solved, tracked, supported, or completed."
               />
 
-              <PreviewSection
-                title="Skills"
-                text={resume.skills}
-                emptyText="Your skills will appear here."
+              <TipCard
+                title="Include proof"
+                text="Mention numbers when possible: customers helped, projects completed, years of experience, tools used, or results improved."
               />
 
-              <PreviewSection
-                title="Experience"
-                text={resume.experience}
-                emptyText="Your experience will appear here."
+              <TipCard
+                title="Informal work counts"
+                text="Freelance work, family business work, caregiving, repairs, tutoring, community work, and unpaid projects can still show real skills."
               />
 
-              <PreviewSection
-                title="Education / Training"
-                text={resume.education}
-                emptyText="Your education or training will appear here."
+              <TipCard
+                title="ProofMode advantage"
+                text="Later, verified TrustTags can be added automatically so your resume shows proof instead of only claims."
               />
             </div>
+          </aside>
+        </section>
+
+        <section className="mt-8 rounded-2xl border bg-background p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
+            Resume Preview
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            This is the saved profile version users can keep improving over
+            time.
+          </p>
+
+          <div className="mt-6 rounded-2xl border bg-card p-5">
+            <h3 className="text-2xl font-bold text-foreground">
+              {resume.fullName || "Your Name"}
+            </h3>
+
+            <p className="mt-2 text-sm font-medium text-primary">
+              {resume.headline || "Your resume headline will appear here"}
+            </p>
+
+            <PreviewSection
+              title="Professional Summary"
+              text={resume.summary}
+              emptyText="Your summary will appear here."
+            />
+
+            <PreviewSection
+              title="Skills"
+              text={resume.skills}
+              emptyText="Your skills will appear here."
+            />
+
+            <PreviewSection
+              title="Experience"
+              text={resume.experience}
+              emptyText="Your experience will appear here."
+            />
+
+            <PreviewSection
+              title="Education / Training"
+              text={resume.education}
+              emptyText="Your education or training will appear here."
+            />
           </div>
         </section>
       </main>
@@ -189,15 +226,18 @@ function ResumeInput({
   value,
   onChange,
   placeholder,
+  help,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
+  help: string;
 }) {
   return (
     <label className="block">
       <span className="text-sm font-medium text-foreground">{label}</span>
+      <p className="mt-1 text-xs text-muted-foreground">{help}</p>
       <input
         className="mt-2 w-full rounded-xl border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
         value={value}
@@ -213,22 +253,34 @@ function ResumeTextArea({
   value,
   onChange,
   placeholder,
+  help,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
+  help: string;
 }) {
   return (
     <label className="block">
       <span className="text-sm font-medium text-foreground">{label}</span>
+      <p className="mt-1 text-xs text-muted-foreground">{help}</p>
       <textarea
-        className="mt-2 min-h-28 w-full rounded-xl border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
+        className="mt-2 min-h-32 w-full rounded-xl border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
       />
     </label>
+  );
+}
+
+function TipCard({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-xl border bg-card p-4">
+      <h3 className="font-semibold text-foreground">{title}</h3>
+      <p className="mt-2 text-muted-foreground">{text}</p>
+    </div>
   );
 }
 
