@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { getAllTrustTags } from "@/data/proofmodeStore";
 
 type ProfileTab =
   | "overview"
@@ -25,6 +26,16 @@ const tabs: { id: ProfileTab; label: string }[] = [
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
+
+  const trustTags = useMemo(() => getAllTrustTags(), []);
+
+  const trustTagCount = trustTags.length;
+  const verifiedSkillCount = new Set(
+    trustTags.map((record) => record.skillCode).filter(Boolean)
+  ).size;
+  const evidenceFileCount = trustTags.reduce((total, record) => {
+    return total + (record.evidenceItems?.length ?? record.evidenceCount ?? 0);
+  }, 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -57,9 +68,18 @@ export default function Profile() {
         </section>
 
         <section className="mt-6 grid gap-4 md:grid-cols-4">
-          <StatusCard label="TrustTags" value="None yet" />
-          <StatusCard label="Verified Skills" value="None yet" />
-          <StatusCard label="Evidence Files" value="None yet" />
+          <StatusCard
+            label="TrustTags"
+            value={trustTagCount > 0 ? String(trustTagCount) : "None yet"}
+          />
+          <StatusCard
+            label="Verified Skills"
+            value={verifiedSkillCount > 0 ? String(verifiedSkillCount) : "None yet"}
+          />
+          <StatusCard
+            label="Evidence Files"
+            value={evidenceFileCount > 0 ? String(evidenceFileCount) : "None yet"}
+          />
           <StatusCard label="Profile Type" value="Regular" />
         </section>
 
