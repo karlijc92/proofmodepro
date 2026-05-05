@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -9,7 +9,6 @@ type ToolContent = {
   label: string;
   description: string;
   examples: string[];
-  primaryAction: string;
 };
 
 const toolContent: Record<string, ToolContent> = {
@@ -17,79 +16,73 @@ const toolContent: Record<string, ToolContent> = {
     title: "Evidence Manager",
     label: "Profile Tool",
     description:
-      "Organize proof files, work samples, documents, photos, and supporting evidence connected to future TrustTags.",
+      "Organize and prepare your proof, work samples, and documents to support your skills and future TrustTags.",
     examples: [
       "Upload work samples",
-      "Track documents tied to skills",
-      "Prepare evidence for review",
-      "Keep proof organized for employers or programs",
+      "Add photos or documents",
+      "Prepare proof for TrustTags",
+      "Organize files for employers",
     ],
-    primaryAction: "Evidence uploads will connect here later",
   },
   "/profile/interview-prep": {
     title: "Interview Prep",
     label: "Job Tool",
     description:
-      "Prepare stronger interview answers using your skills, experience, and ProofMode profile.",
+      "Practice answering real interview questions using your experience and verified skills.",
     examples: [
-      "Practice common interview questions",
-      "Prepare answers using real experience",
-      "Turn verified skills into talking points",
-      "Build confidence before interviews",
+      "Tell me about yourself",
+      "Describe your experience with [skill]",
+      "Give an example of a challenge you solved",
+      "Why should we hire you?",
     ],
-    primaryAction: "Interview practice will be built here",
   },
   "/profile/role-play": {
     title: "Role Play Practice",
     label: "Job Tool",
     description:
-      "Practice workplace conversations, customer service situations, and job scenarios.",
+      "Practice real workplace conversations and situations to build confidence.",
     examples: [
-      "Practice customer conversations",
-      "Practice supervisor conversations",
-      "Practice conflict resolution",
-      "Practice job-specific scenarios",
+      "Customer complaint scenario",
+      "Talking to a supervisor",
+      "Handling a mistake at work",
+      "Workplace communication",
     ],
-    primaryAction: "Role play tools will be built here",
   },
   "/profile/skill-quizzes": {
     title: "Skill Quizzes",
     label: "Job Tool",
     description:
-      "Take readiness quizzes to understand strengths, gaps, and areas to improve.",
+      "Test your knowledge and identify areas to improve before real assessments.",
     examples: [
-      "Check skill readiness",
-      "Prepare before assessments",
-      "Identify weak areas",
-      "Build confidence before verification",
+      "Basic knowledge checks",
+      "Scenario-based questions",
+      "Skill readiness tests",
+      "Confidence building quizzes",
     ],
-    primaryAction: "Skill quizzes will be built here",
   },
   "/profile/job-tracker": {
     title: "Job Search Tracker",
     label: "Job Tool",
     description:
-      "Track applications, interviews, follow-ups, deadlines, and next steps.",
+      "Track your job applications, interviews, and follow-ups in one place.",
     examples: [
-      "Save jobs applied to",
-      "Track interview dates",
-      "Track follow-up reminders",
-      "Organize job search progress",
+      "Job applied to",
+      "Interview scheduled",
+      "Follow-up reminders",
+      "Application status",
     ],
-    primaryAction: "Job tracker will be built here",
   },
   "/profile/career-plan": {
     title: "Career Plan",
     label: "Job Tool",
     description:
-      "Create a clear plan for improving skills, building proof, and applying for better opportunities.",
+      "Create a simple plan to improve your skills, build proof, and reach better opportunities.",
     examples: [
-      "Choose target jobs",
-      "List skills to improve",
-      "Plan TrustTags to earn",
-      "Create next-step career goals",
+      "Target job roles",
+      "Skills to improve",
+      "TrustTags to earn",
+      "Next steps",
     ],
-    primaryAction: "Career planning will be built here",
   },
 };
 
@@ -97,20 +90,16 @@ export default function ProfileTool() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const [inputValue, setInputValue] = useState("");
+
   const content = useMemo(() => {
     return (
       toolContent[location.pathname] || {
         title: "Profile Tool",
         label: "Profile Tool",
         description:
-          "This profile tool is being prepared as part of the ProofMode profile system.",
-        examples: [
-          "Profile support",
-          "Skill development",
-          "Job-readiness support",
-          "Proof-backed career tools",
-        ],
-        primaryAction: "Tool functionality will be built here",
+          "Use this tool to strengthen your profile and improve your job readiness.",
+        examples: ["Skill building", "Career growth", "Job preparation"],
       }
     );
   }, [location.pathname]);
@@ -131,38 +120,42 @@ export default function ProfileTool() {
         </section>
 
         <section className="mt-8 grid gap-6 lg:grid-cols-2">
+          {/* LEFT SIDE */}
           <div className="rounded-2xl border bg-card p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-foreground">
-              What This Tool Will Support
+              Practice / Input
+            </h2>
+
+            <div className="mt-5 space-y-4">
+              <textarea
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Type your response, notes, or practice answers here..."
+                className="w-full rounded-xl border p-4 text-sm"
+                rows={6}
+              />
+
+              <Button variant="outline">
+                Save Progress (coming soon)
+              </Button>
+            </div>
+          </div>
+
+          {/* RIGHT SIDE */}
+          <div className="rounded-2xl border bg-background p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
+              Examples & Guidance
             </h2>
 
             <div className="mt-5 space-y-3">
               {content.examples.map((example) => (
                 <div
                   key={example}
-                  className="rounded-xl border bg-background p-4 text-sm font-medium text-foreground"
+                  className="rounded-xl border bg-card p-4 text-sm font-medium text-foreground"
                 >
                   {example}
                 </div>
               ))}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border bg-background p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-foreground">
-              Tool Status
-            </h2>
-            <p className="mt-3 text-sm text-muted-foreground">
-              This page is connected so users do not hit dead buttons or 404
-              pages. Full functionality can be expanded after the full profile
-              system is routed and stable.
-            </p>
-
-            <div className="mt-6 rounded-xl border bg-card p-4">
-              <p className="text-sm font-medium text-primary">Next Build Step</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {content.primaryAction}
-              </p>
             </div>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -170,7 +163,7 @@ export default function ProfileTool() {
                 Back to Profile
               </Button>
               <Button variant="outline" onClick={() => navigate("/pricing")}>
-                View Upgrade Options
+                Upgrade for Advanced Tools
               </Button>
             </div>
           </div>
