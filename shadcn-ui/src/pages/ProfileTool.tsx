@@ -154,59 +154,157 @@ const quizQuestions: {
 
 function isGibberish(text: string) {
   const cleaned = text.trim().toLowerCase();
-  if (cleaned.length < 15) return true;
+  if (cleaned.length < 12) return true;
 
   const words = cleaned.split(/\s+/).filter(Boolean);
-  if (words.length < 5) return true;
+  if (words.length < 3) return true;
 
-  const vowels = cleaned.match(/[aeiou]/g)?.length ?? 0;
   const letters = cleaned.match(/[a-z]/g)?.length ?? 0;
-  if (letters > 0 && vowels / letters < 0.22) return true;
+  const vowels = cleaned.match(/[aeiou]/g)?.length ?? 0;
+  const numbers = cleaned.match(/[0-9]/g)?.length ?? 0;
+  const strangeCharacters = cleaned.match(/[^a-z0-9\s.,!?'"()-]/g)?.length ?? 0;
 
-  return words.some((word) => word.length > 18 && !/[aeiou]{2}/.test(word));
+  if (letters === 0) return true;
+  if (numbers > letters) return true;
+  if (strangeCharacters > 3) return true;
+  if (letters > 15 && vowels / letters < 0.2) return true;
+
+  const longNonsenseWords = words.filter(
+    (word) => word.length > 14 && !/[aeiou]{2}/.test(word)
+  );
+
+  if (longNonsenseWords.length >= 1) return true;
+
+  const readableWords = words.filter((word) =>
+    [
+      "i",
+      "me",
+      "my",
+      "we",
+      "work",
+      "worked",
+      "job",
+      "team",
+      "customer",
+      "client",
+      "help",
+      "helped",
+      "learn",
+      "learned",
+      "solve",
+      "solved",
+      "fix",
+      "fixed",
+      "build",
+      "built",
+      "manage",
+      "managed",
+      "organize",
+      "organized",
+      "because",
+      "result",
+      "time",
+      "example",
+      "experience",
+      "skill",
+      "strong",
+      "hire",
+      "trust",
+    ].includes(word)
+  );
+
+  return words.length >= 5 && readableWords.length === 0 && cleaned.length < 80;
 }
 
 function buildAnswerFeedback(answer: string) {
-  const lower = answer.toLowerCase();
-  const words = answer.trim().split(/\s+/).filter(Boolean);
+  const trimmed = answer.trim();
+  const lower = trimmed.toLowerCase();
+  const words = trimmed.split(/\s+/).filter(Boolean);
 
-  if (isGibberish(answer)) {
+  if (!trimmed) {
+    return {
+      rating: "No answer entered",
+      feedback:
+        "Type an answer first so the tool can review it. A strong interview answer should include a real example, what you did, and what happened after.",
+      improved:
+        "Start with: “One example is when I…” Then explain the situation, your action, and the result.",
+    };
+  }
+
+  if (isGibberish(trimmed)) {
     return {
       rating: "Needs work",
       feedback:
-        "This does not read like a real answer yet. Write a clear response using full sentences, a real example, what you did, and what happened after.",
+        "This does not read like a real interview answer yet. It looks random or unclear, so an employer would not understand your experience from this response.",
       improved:
-        "Example: In my last role, I helped solve a scheduling issue by organizing the tasks, communicating with the team, and making sure the work was completed on time. The result was a smoother process and fewer missed deadlines.",
+        "Write 3–5 clear sentences. Example: “One example is when I helped fix a problem at work. I noticed what was wrong, communicated with the team, and completed my part. As a result, the work was finished on time.”",
     };
   }
 
   const hasExample =
     lower.includes("for example") ||
+    lower.includes("one example") ||
     lower.includes("one time") ||
     lower.includes("in my") ||
+    lower.includes("at my") ||
     lower.includes("when i") ||
     lower.includes("i worked") ||
-    lower.includes("i helped");
+    lower.includes("i helped") ||
+    lower.includes("i had to") ||
+    lower.includes("there was a time");
+
+  const hasPersonalAction =
+    lower.includes(" i ") ||
+    lower.startsWith("i ") ||
+    lower.includes(" my ") ||
+    lower.includes(" me ");
 
   const hasAction = actionWords.some((word) => lower.includes(word));
 
   const hasResult =
-    lower.includes("result") ||
-    lower.includes("because") ||
+    lower.includes("as a result") ||
+    lower.includes("the result") ||
+    lower.includes("because of that") ||
+    lower.includes("this helped") ||
+    lower.includes("it helped") ||
     lower.includes("improved") ||
     lower.includes("completed") ||
     lower.includes("finished") ||
     lower.includes("saved") ||
     lower.includes("increased") ||
-    lower.includes("reduced");
+    lower.includes("reduced") ||
+    lower.includes("on time") ||
+    lower.includes("better") ||
+    lower.includes("successful") ||
+    lower.includes("satisfied");
 
-  if (words.length < 35) {
+  const hasConfidence =
+    lower.includes("strong") ||
+    lower.includes("reliable") ||
+    lower.includes("dependable") ||
+    lower.includes("learn quickly") ||
+    lower.includes("hard worker") ||
+    lower.includes("good at") ||
+    lower.includes("experience") ||
+    lower.includes("skilled");
+
+  if (words.length < 20) {
     return {
-      rating: "Needs more detail",
+      rating: "Too short",
       feedback:
-        "This is understandable, but it is too short for a strong interview answer. Add a real example, your action, and the result.",
+        "This is readable, but it is too short to be convincing in an interview. It needs more proof behind it.",
       improved:
-        "Try: Situation — what was happening. Action — what you personally did. Result — what changed because of your work.",
+        "Add one real example, what you personally did, and what changed after. Aim for at least 3 full sentences.",
+    };
+  }
+
+  if (!hasPersonalAction) {
+    return {
+      rating: "Needs your personal role",
+      feedback:
+        "This answer may describe a situation, but it does not clearly show what you personally did. Employers need to hear your role, not just the general situation.",
+      improved:
+        "Add: “My role was…” or “I personally handled…” so the answer clearly proves your contribution.",
     };
   }
 
@@ -214,38 +312,48 @@ function buildAnswerFeedback(answer: string) {
     return {
       rating: "Good start",
       feedback:
-        "Your answer is readable, but it needs a specific example. Employers trust answers more when they can picture the real situation.",
+        "Your answer is understandable, but it needs a specific example. Right now it sounds too general, so it may not fully prove your experience.",
       improved:
-        "Add a sentence like: “For example, when I was working on ___, I had to ___, so I ___.”",
+        "Add a real moment: “For example, when I was working on ___, I had to ___, so I ___.”",
     };
   }
 
   if (!hasAction) {
     return {
-      rating: "Almost there",
+      rating: "Needs stronger action",
       feedback:
-        "You gave context, but you need to make your personal role clearer. Say exactly what you did.",
+        "You gave some context, but your answer needs stronger action language. Make it clear what you did and how you handled the situation.",
       improved:
-        "Use action words like organized, repaired, managed, assisted, solved, built, tracked, trained, completed, improved, or communicated.",
+        "Use words like organized, repaired, managed, assisted, solved, built, tracked, trained, completed, improved, or communicated.",
     };
   }
 
   if (!hasResult) {
     return {
-      rating: "Strong answer with one missing piece",
+      rating: "Almost strong",
       feedback:
-        "You gave a real example and explained your action. Now add the result so the answer feels complete.",
+        "This has a real example and action, but it needs a result. The result is what makes the answer feel complete and believable.",
       improved:
-        "End with: “As a result, the work was completed on time, the customer was satisfied, or the process improved.”",
+        "End with the outcome: “As a result, the project was completed on time,” “the customer was satisfied,” or “the process improved.”",
+    };
+  }
+
+  if (!hasConfidence) {
+    return {
+      rating: "Strong answer",
+      feedback:
+        "This is a strong interview answer because it includes an example, your action, and a result. It would be even better if you connected it directly to why you are a reliable person to hire.",
+      improved:
+        "Add one final confidence sentence: “That experience shows I am dependable, quick to learn, and able to solve problems under pressure.”",
     };
   }
 
   return {
-    rating: "Strong answer",
+    rating: "Excellent answer",
     feedback:
-      "This is a strong answer because it includes experience, action, and outcome. To make it even better, add numbers if possible.",
+      "This is a strong answer. It gives a real example, explains your action, includes a result, and connects your experience to why an employer should trust you.",
     improved:
-      "Example upgrade: Add numbers such as how many customers helped, how many projects completed, time saved, money saved, or quality improved.",
+      "To make it even stronger, add numbers if possible, such as how many customers helped, how many tasks completed, how much time saved, or how the quality improved.",
   };
 }
 
