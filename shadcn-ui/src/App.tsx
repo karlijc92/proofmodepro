@@ -23,6 +23,7 @@ import AssessmentResultsPage from "./pages/AssessmentResults";
 import ProofUploadPage from "./pages/ProofUpload";
 import ResumeBuilder from "./pages/ResumeBuilder";
 import ProfileTool from "./pages/ProfileTool";
+import PaymentSuccessPage from "./pages/PaymentSuccess";
 
 const queryClient = new QueryClient();
 
@@ -40,7 +41,7 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/resume-builder" element={<ResumeBuilder />} />
 
-          {/* Profile Tools (no more 404s) */}
+          {/* Profile Tools */}
           <Route path="/profile/evidence-manager" element={<ProfileTool />} />
           <Route path="/profile/interview-prep" element={<ProfileTool />} />
           <Route path="/profile/role-play" element={<ProfileTool />} />
@@ -66,6 +67,12 @@ const App = () => (
           <Route
             path="/assessment/:id/results"
             element={<AssessmentResultsPage />}
+          />
+
+          {/* Future Payment Success Route */}
+          <Route
+            path="/payment-success"
+            element={<PaymentSuccessPage />}
           />
 
           <Route path="*" element={<NotFound />} />
