@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Award } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import { savePendingAssessment } from '@/data/proofmodeStore';
 
 interface AssessmentAnswer {
   questionId: string;
@@ -70,8 +71,32 @@ export default function AssessmentResultsPage() {
   const score = Math.round((correctAnswersCount / assessment.questions.length) * 100);
   const passed = score >= 80;
 
-  // ✅ NEW: Redirect to pricing instead of creating TrustTag
   const handleContinueToPricing = () => {
+    const skillCodes = (assessment.id || id || '')
+      .split(',')
+      .map((code) => code.trim())
+      .filter(Boolean);
+
+    savePendingAssessment({
+      id: `pending-${Date.now()}`,
+      assessmentId: assessment.id,
+      assessmentTitle: assessment.title,
+      skillCodes,
+      score,
+      correctAnswersCount,
+      totalQuestions: assessment.questions.length,
+      answers,
+      evidenceItems: (uploadedEvidence || []).map((item) => ({
+        id: item.id,
+        name: item.name,
+        typeLabel: item.typeLabel,
+        sizeLabel: item.sizeLabel,
+        uploadedAt: new Date().toISOString(),
+      })),
+      passed,
+      createdAt: new Date().toISOString(),
+    });
+
     navigate('/pricing');
   };
 
@@ -105,10 +130,7 @@ export default function AssessmentResultsPage() {
                   </p>
 
                   <div className="mt-6 space-y-3">
-                    <Button
-                      className="w-full"
-                      onClick={handleContinueToPricing}
-                    >
+                    <Button className="w-full" onClick={handleContinueToPricing}>
                       Continue to Unlock Your TrustTag
                     </Button>
 
