@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getAllTrustTags, clearTrustTagStore } from "@/data/proofmodeStore";
+import { ProofModeTrustTagRecord } from "@/data/proofmodeRecords";
 
 function formatStatus(status: string) {
   switch (status) {
@@ -20,8 +21,20 @@ function formatStatus(status: string) {
   }
 }
 
+function formatDate(value?: string) {
+  if (!value) return "Not set yet";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Not set yet";
+  }
+
+  return date.toLocaleDateString();
+}
+
 export default function ProfilePreview() {
-  const [trustTags, setTrustTags] = useState<any[]>([]);
+  const [trustTags, setTrustTags] = useState<ProofModeTrustTagRecord[]>([]);
   const [storageChecked, setStorageChecked] = useState(false);
 
   useEffect(() => {
@@ -75,16 +88,35 @@ export default function ProfilePreview() {
                         Evidence Items: {tag.evidenceCount}
                       </p>
 
-                      <p className="text-sm text-gray-600">
+                      {tag.evidenceItems && tag.evidenceItems.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-sm font-medium text-gray-700">
+                            Evidence Files:
+                          </p>
+
+                          <ul className="mt-1 space-y-1">
+                            {tag.evidenceItems.map((item) => (
+                              <li
+                                key={item.id}
+                                className="text-sm text-gray-600"
+                              >
+                                {item.name} — {item.type}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      <p className="text-sm text-gray-600 mt-2">
                         Profile ID: {tag.profileId}
                       </p>
 
                       <p className="text-sm text-gray-600">
-                        Issued: {tag.issuedAt}
+                        Issued: {formatDate(tag.issuedAt)}
                       </p>
 
                       <p className="text-sm text-gray-600">
-                        Expires: {tag.expiresAt}
+                        Expires: {formatDate(tag.expiresAt)}
                       </p>
 
                       <p className="text-sm text-gray-500">
