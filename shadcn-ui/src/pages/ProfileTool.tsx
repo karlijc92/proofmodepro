@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import {
   addEvidenceNoteToUnifiedProfile,
   addJobTrackerEntryToUnifiedProfile,
-  emptyCareerPlanData,
   getUnifiedProfile,
   saveCareerPlanToUnifiedProfile,
 } from "@/data/proofmodeProfileStore";
@@ -20,6 +19,22 @@ type ToolKey =
   | "tracker"
   | "career"
   | "default";
+
+type SavedJobEntry = {
+  id: string;
+  jobTitle: string;
+  company: string;
+  status: string;
+  savedAt: string;
+};
+
+type SavedEvidenceNote = {
+  id?: string;
+  title: string;
+  skillArea?: string;
+  description: string;
+  savedAt?: string;
+};
 
 const routeToTool: Record<string, ToolKey> = {
   "/profile/evidence-manager": "evidence",
@@ -65,33 +80,130 @@ const quizQuestions = [
     question: "What kind of work feels most natural to you?",
     options: [
       {
-        label:
-          "Fixing, building, repairing, or working with my hands",
+        label: "Fixing, building, repairing, or working with my hands",
         value: "hands-on",
       },
       {
-        label:
-          "Helping, teaching, supporting, or communicating with people",
+        label: "Helping, teaching, supporting, or communicating with people",
         value: "people",
       },
       {
-        label:
-          "Organizing, tracking, checking details, or solving process problems",
+        label: "Organizing, tracking, checking details, or solving process problems",
         value: "detail",
       },
       {
-        label:
-          "Designing, writing, creating content, or making things look better",
+        label: "Designing, writing, creating content, or making things look better",
         value: "creative",
       },
       {
-        label:
-          "Planning, leading, making decisions, or guiding others",
+        label: "Planning, leading, making decisions, or guiding others",
         value: "leadership",
       },
     ],
   },
 ];
+
+function isLowQualityText(text: string) {
+  const cleaned = text.trim().toLowerCase();
+  const lettersOnly = cleaned.replace(/[^a-z]/g, "");
+  const wordCount = cleaned.split(/\s+/).filter(Boolean).length;
+
+  if (cleaned.length < 20) return true;
+  if (wordCount < 5) return true;
+  if (/(.)\1{4,}/.test(cleaned)) return true;
+  if (lettersOnly.length > 0) {
+    const vowelCount = (lettersOnly.match(/[aeiou]/g) || []).length;
+    if (vowelCount / lettersOnly.length < 0.18) return true;
+  }
+
+  return false;
+}
+
+function buildInterviewFeedback(answer: string) {
+  if (isLowQualityText(answer)) {
+    return "This does not look like a complete interview answer yet. Add a clear example, explain what you did, and end with the result or lesson learned.";
+  }
+
+  const lower = answer.toLowerCase();
+  const hasExample =
+    lower.includes("for example") ||
+    lower.includes("one time") ||
+    lower.includes("when i") ||
+    lower.includes("in my role") ||
+    lower.includes("at work") ||
+    lower.includes("during");
+  const hasAction =
+    lower.includes("i did") ||
+    lower.includes("i handled") ||
+    lower.includes("i helped") ||
+    lower.includes("i learned") ||
+    lower.includes("i solved") ||
+    lower.includes("i communicated") ||
+    lower.includes("i made sure");
+  const hasResult =
+    lower.includes("result") ||
+    lower.includes("because of that") ||
+    lower.includes("this helped") ||
+    lower.includes("we were able") ||
+    lower.includes("it improved") ||
+    lower.includes("i learned");
+
+  if (hasExample && hasAction && hasResult) {
+    return "Strong answer. You gave context, explained your action, and connected it to a result. To make it even stronger, keep it concise and tie it directly to the job you want.";
+  }
+
+  if (hasExample && hasAction) {
+    return "Good start. You gave an example and explained what you did. Add the outcome so an employer can clearly see the value of your experience.";
+  }
+
+  if (hasAction) {
+    return "This has useful information, but it needs a stronger structure. Try using: situation, what you did, and what happened afterward.";
+  }
+
+  return "This needs more detail before it would work well in an interview. Add a real situation, the action you took, and the outcome.";
+}
+
+function buildRolePlayFeedback(response: string) {
+  if (isLowQualityText(response)) {
+    return "This does not look like a real workplace response yet. Write what you would actually say, acknowledge the issue, stay professional, and include the next step.";
+  }
+
+  const lower = response.toLowerCase();
+  const acknowledges =
+    lower.includes("understand") ||
+    lower.includes("i hear") ||
+    lower.includes("i see") ||
+    lower.includes("sorry") ||
+    lower.includes("thank you") ||
+    lower.includes("appreciate");
+  const staysProfessional =
+    !lower.includes("stupid") &&
+    !lower.includes("shut up") &&
+    !lower.includes("not my problem") &&
+    !lower.includes("whatever");
+  const nextStep =
+    lower.includes("i will") ||
+    lower.includes("i can") ||
+    lower.includes("let me") ||
+    lower.includes("next") ||
+    lower.includes("fix") ||
+    lower.includes("follow up") ||
+    lower.includes("check");
+
+  if (acknowledges && staysProfessional && nextStep) {
+    return "Strong workplace response. You acknowledged the concern, stayed professional, and gave a clear next step. That is the right structure for customer, coworker, and supervisor situations.";
+  }
+
+  if (staysProfessional && nextStep) {
+    return "Good response. It gives a next step and stays professional. Add a short acknowledgment first so the other person feels heard.";
+  }
+
+  if (acknowledges && staysProfessional) {
+    return "This starts well because it acknowledges the issue. Add a clear next step so the conversation moves toward a solution.";
+  }
+
+  return "This needs to sound more professional and solution-focused. A stronger answer should acknowledge the concern, stay calm, and explain what you will do next.";
+}
 
 export default function ProfileTool() {
   const location = useLocation();
@@ -116,14 +228,9 @@ export default function ProfileTool() {
         {tool === "default" && <DefaultTool />}
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Button onClick={() => navigate("/profile")}>
-            Back to Profile
-          </Button>
+          <Button onClick={() => navigate("/profile")}>Back to Profile</Button>
 
-          <Button
-            variant="outline"
-            onClick={() => navigate("/pricing")}
-          >
+          <Button variant="outline" onClick={() => navigate("/pricing")}>
             Upgrade for Advanced Tools
           </Button>
         </div>
@@ -145,17 +252,13 @@ function ToolHeader({
 }) {
   return (
     <section className="rounded-2xl border bg-card p-6 shadow-sm">
-      <p className="text-sm font-medium text-primary">
-        {label}
-      </p>
+      <p className="text-sm font-medium text-primary">{label}</p>
 
       <h1 className="mt-2 text-3xl font-bold text-foreground md:text-4xl">
         {title}
       </h1>
 
-      <p className="mt-3 max-w-3xl text-muted-foreground">
-        {description}
-      </p>
+      <p className="mt-3 max-w-3xl text-muted-foreground">{description}</p>
     </section>
   );
 }
@@ -165,12 +268,20 @@ function EvidenceManager() {
   const [skillArea, setSkillArea] = useState("");
   const [description, setDescription] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
+  const [savedEvidence, setSavedEvidence] = useState<SavedEvidenceNote[]>([]);
+
+  function refreshEvidence() {
+    const profile = getUnifiedProfile();
+    setSavedEvidence((profile.evidenceNotes || []) as SavedEvidenceNote[]);
+  }
+
+  useEffect(() => {
+    refreshEvidence();
+  }, []);
 
   function saveEvidenceNote() {
     if (!title.trim() || !description.trim()) {
-      setSavedMessage(
-        "Please add a title and description first."
-      );
+      setSavedMessage("Please add a title and description first.");
       return;
     }
 
@@ -180,13 +291,11 @@ function EvidenceManager() {
       description,
     });
 
-    setSavedMessage(
-      "Evidence note saved to your profile."
-    );
-
+    setSavedMessage("Evidence note saved to your profile.");
     setTitle("");
     setSkillArea("");
     setDescription("");
+    refreshEvidence();
   }
 
   return (
@@ -220,46 +329,67 @@ function EvidenceManager() {
 
             <textarea
               value={description}
-              onChange={(e) =>
-                setDescription(e.target.value)
-              }
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe what this evidence proves..."
               className="w-full rounded-xl border bg-background p-4 text-sm"
               rows={6}
             />
 
-            <Button onClick={saveEvidenceNote}>
-              Save Evidence Note
-            </Button>
+            <Button onClick={saveEvidenceNote}>Save Evidence Note</Button>
 
             {savedMessage && (
-              <p className="text-sm font-medium text-primary">
-                {savedMessage}
-              </p>
+              <p className="text-sm font-medium text-primary">{savedMessage}</p>
             )}
           </div>
         </div>
 
         <div className="rounded-2xl border bg-background p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-foreground">
-            Evidence Checklist
+            Saved Evidence Notes
           </h2>
 
           <div className="mt-5 space-y-3">
-            {[
-              "What skill does this prove?",
-              "Is the evidence clear and easy to understand?",
-              "Does it show real work or real experience?",
-              "Could an employer or reviewer understand it quickly?",
-            ].map((item) => (
-              <div
-                key={item}
-                className="rounded-xl border bg-card p-4 text-sm font-medium"
-              >
-                {item}
-              </div>
-            ))}
+            {savedEvidence.length === 0 ? (
+              <p className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
+                No saved evidence notes yet.
+              </p>
+            ) : (
+              savedEvidence.map((item, index) => (
+                <div
+                  key={item.id || `${item.title}-${index}`}
+                  className="rounded-xl border bg-card p-4 text-sm"
+                >
+                  <p className="font-semibold text-foreground">{item.title}</p>
+                  <p className="mt-1 text-muted-foreground">
+                    {item.skillArea || "No skill area entered"}
+                  </p>
+                  <p className="mt-3 text-foreground">{item.description}</p>
+                </div>
+              ))
+            )}
           </div>
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-2xl border bg-background p-6 shadow-sm">
+        <h2 className="text-xl font-semibold text-foreground">
+          Evidence Checklist
+        </h2>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {[
+            "What skill does this prove?",
+            "Is the evidence clear and easy to understand?",
+            "Does it show real work or real experience?",
+            "Could an employer or reviewer understand it quickly?",
+          ].map((item) => (
+            <div
+              key={item}
+              className="rounded-xl border bg-card p-4 text-sm font-medium"
+            >
+              {item}
+            </div>
+          ))}
         </div>
       </section>
     </>
@@ -269,6 +399,17 @@ function EvidenceManager() {
 function InterviewPrep() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answer, setAnswer] = useState("");
+  const [feedback, setFeedback] = useState("");
+
+  function reviewAnswer() {
+    setFeedback(buildInterviewFeedback(answer));
+  }
+
+  function nextQuestion() {
+    setQuestionIndex((current) => (current + 1) % interviewQuestions.length);
+    setAnswer("");
+    setFeedback("");
+  }
 
   return (
     <>
@@ -296,18 +437,18 @@ function InterviewPrep() {
         />
 
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <Button
-            onClick={() =>
-              setQuestionIndex(
-                (current) =>
-                  (current + 1) %
-                  interviewQuestions.length
-              )
-            }
-          >
+          <Button onClick={reviewAnswer}>Review My Answer</Button>
+          <Button variant="outline" onClick={nextQuestion}>
             Next Question
           </Button>
         </div>
+
+        {feedback && (
+          <div className="mt-5 rounded-xl border bg-background p-4 text-sm">
+            <p className="font-semibold text-foreground">Feedback</p>
+            <p className="mt-2 text-muted-foreground">{feedback}</p>
+          </div>
+        )}
       </section>
     </>
   );
@@ -316,6 +457,17 @@ function InterviewPrep() {
 function RolePlayPractice() {
   const [scenarioIndex, setScenarioIndex] = useState(0);
   const [response, setResponse] = useState("");
+  const [feedback, setFeedback] = useState("");
+
+  function reviewResponse() {
+    setFeedback(buildRolePlayFeedback(response));
+  }
+
+  function nextScenario() {
+    setScenarioIndex((current) => (current + 1) % rolePlayScenarios.length);
+    setResponse("");
+    setFeedback("");
+  }
 
   return (
     <>
@@ -338,27 +490,26 @@ function RolePlayPractice() {
           rows={7}
         />
 
-        <Button
-          className="mt-4"
-          onClick={() =>
-            setScenarioIndex(
-              (current) =>
-                (current + 1) %
-                rolePlayScenarios.length
-            )
-          }
-        >
-          Next Scenario
-        </Button>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+          <Button onClick={reviewResponse}>Review My Response</Button>
+          <Button variant="outline" onClick={nextScenario}>
+            Next Scenario
+          </Button>
+        </div>
+
+        {feedback && (
+          <div className="mt-5 rounded-xl border bg-background p-4 text-sm">
+            <p className="font-semibold text-foreground">Feedback</p>
+            <p className="mt-2 text-muted-foreground">{feedback}</p>
+          </div>
+        )}
       </section>
     </>
   );
 }
 
 function SkillQuizzes() {
-  const [answers, setAnswers] = useState<
-    Record<number, QuizAnswer>
-  >({});
+  const [answers, setAnswers] = useState<Record<number, QuizAnswer>>({});
 
   return (
     <>
@@ -387,14 +538,11 @@ function SkillQuizzes() {
                   <input
                     type="radio"
                     name={`quiz-${index}`}
-                    checked={
-                      answers[index] === option.value
-                    }
+                    checked={answers[index] === option.value}
                     onChange={() =>
                       setAnswers((current) => ({
                         ...current,
-                        [index]:
-                          option.value as QuizAnswer,
+                        [index]: option.value as QuizAnswer,
                       }))
                     }
                   />
@@ -415,10 +563,23 @@ function JobTracker() {
   const [company, setCompany] = useState("");
   const [status, setStatus] = useState("Interested");
   const [savedMessage, setSavedMessage] = useState("");
+  const [savedJobs, setSavedJobs] = useState<SavedJobEntry[]>([]);
 
-  const savedCount = getUnifiedProfile().jobTracker.length;
+  function refreshJobs() {
+    const profile = getUnifiedProfile();
+    setSavedJobs((profile.jobTracker || []) as SavedJobEntry[]);
+  }
+
+  useEffect(() => {
+    refreshJobs();
+  }, []);
 
   function saveJobEntry() {
+    if (!jobTitle.trim() || !company.trim()) {
+      setSavedMessage("Please add a job title and company first.");
+      return;
+    }
+
     addJobTrackerEntryToUnifiedProfile({
       id: `job-${Date.now()}`,
       jobTitle,
@@ -427,13 +588,11 @@ function JobTracker() {
       savedAt: new Date().toISOString(),
     });
 
-    setSavedMessage(
-      "Job entry saved to your profile."
-    );
-
+    setSavedMessage("Job entry saved to your profile.");
     setJobTitle("");
     setCompany("");
     setStatus("Interested");
+    refreshJobs();
   }
 
   return (
@@ -449,18 +608,14 @@ function JobTracker() {
           <div className="space-y-4">
             <input
               value={jobTitle}
-              onChange={(e) =>
-                setJobTitle(e.target.value)
-              }
+              onChange={(e) => setJobTitle(e.target.value)}
               placeholder="Job title"
               className="w-full rounded-xl border bg-background p-4 text-sm"
             />
 
             <input
               value={company}
-              onChange={(e) =>
-                setCompany(e.target.value)
-              }
+              onChange={(e) => setCompany(e.target.value)}
               placeholder="Company"
               className="w-full rounded-xl border bg-background p-4 text-sm"
             />
@@ -478,23 +633,41 @@ function JobTracker() {
               <option>Not Selected</option>
             </select>
 
-            <Button onClick={saveJobEntry}>
-              Save to Profile
-            </Button>
+            <Button onClick={saveJobEntry}>Save to Profile</Button>
 
             {savedMessage && (
-              <p className="text-sm font-medium text-primary">
-                {savedMessage}
-              </p>
+              <p className="text-sm font-medium text-primary">{savedMessage}</p>
             )}
           </div>
         </div>
 
         <div className="rounded-2xl border bg-background p-6 shadow-sm">
           <p className="text-sm text-muted-foreground">
-            Saved entries in unified profile:{" "}
-            {savedCount}
+            Saved entries in unified profile: {savedJobs.length}
           </p>
+
+          <div className="mt-5 space-y-3">
+            {savedJobs.length === 0 ? (
+              <p className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
+                No saved jobs yet.
+              </p>
+            ) : (
+              savedJobs.map((job) => (
+                <div
+                  key={job.id}
+                  className="rounded-xl border bg-card p-4 text-sm"
+                >
+                  <p className="font-semibold text-foreground">
+                    {job.jobTitle}
+                  </p>
+                  <p className="mt-1 text-muted-foreground">{job.company}</p>
+                  <p className="mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground">
+                    {job.status}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </section>
     </>
@@ -503,39 +676,21 @@ function JobTracker() {
 
 function CareerPlan() {
   const [targetRole, setTargetRole] = useState("");
-  const [currentStrengths, setCurrentStrengths] =
-    useState("");
-  const [skillsToBuild, setSkillsToBuild] =
-    useState("");
-  const [trustTagsToEarn, setTrustTagsToEarn] =
-    useState("");
+  const [currentStrengths, setCurrentStrengths] = useState("");
+  const [skillsToBuild, setSkillsToBuild] = useState("");
+  const [trustTagsToEarn, setTrustTagsToEarn] = useState("");
   const [nextStep, setNextStep] = useState("");
-  const [savedMessage, setSavedMessage] =
-    useState("");
+  const [savedMessage, setSavedMessage] = useState("");
 
   useEffect(() => {
     const profile = getUnifiedProfile();
 
     if (profile.careerPlan) {
-      setTargetRole(
-        profile.careerPlan.targetRole || ""
-      );
-
-      setCurrentStrengths(
-        profile.careerPlan.currentStrengths || ""
-      );
-
-      setSkillsToBuild(
-        profile.careerPlan.skillsToBuild || ""
-      );
-
-      setTrustTagsToEarn(
-        profile.careerPlan.trustTagsToEarn || ""
-      );
-
-      setNextStep(
-        profile.careerPlan.nextStep || ""
-      );
+      setTargetRole(profile.careerPlan.targetRole || "");
+      setCurrentStrengths(profile.careerPlan.currentStrengths || "");
+      setSkillsToBuild(profile.careerPlan.skillsToBuild || "");
+      setTrustTagsToEarn(profile.careerPlan.trustTagsToEarn || "");
+      setNextStep(profile.careerPlan.nextStep || "");
     }
   }, []);
 
@@ -548,9 +703,7 @@ function CareerPlan() {
       nextStep,
     });
 
-    setSavedMessage(
-      "Career plan saved to your profile."
-    );
+    setSavedMessage("Career plan saved to your profile.");
   }
 
   return (
@@ -566,18 +719,14 @@ function CareerPlan() {
           <div className="mt-5 space-y-4">
             <input
               value={targetRole}
-              onChange={(e) =>
-                setTargetRole(e.target.value)
-              }
+              onChange={(e) => setTargetRole(e.target.value)}
               placeholder="Target role"
               className="w-full rounded-xl border bg-background p-4 text-sm"
             />
 
             <textarea
               value={currentStrengths}
-              onChange={(e) =>
-                setCurrentStrengths(e.target.value)
-              }
+              onChange={(e) => setCurrentStrengths(e.target.value)}
               placeholder="Current strengths"
               className="w-full rounded-xl border bg-background p-4 text-sm"
               rows={3}
@@ -585,9 +734,7 @@ function CareerPlan() {
 
             <textarea
               value={skillsToBuild}
-              onChange={(e) =>
-                setSkillsToBuild(e.target.value)
-              }
+              onChange={(e) => setSkillsToBuild(e.target.value)}
               placeholder="Skills to build"
               className="w-full rounded-xl border bg-background p-4 text-sm"
               rows={3}
@@ -595,9 +742,7 @@ function CareerPlan() {
 
             <textarea
               value={trustTagsToEarn}
-              onChange={(e) =>
-                setTrustTagsToEarn(e.target.value)
-              }
+              onChange={(e) => setTrustTagsToEarn(e.target.value)}
               placeholder="TrustTags to earn"
               className="w-full rounded-xl border bg-background p-4 text-sm"
               rows={3}
@@ -605,22 +750,16 @@ function CareerPlan() {
 
             <textarea
               value={nextStep}
-              onChange={(e) =>
-                setNextStep(e.target.value)
-              }
+              onChange={(e) => setNextStep(e.target.value)}
               placeholder="Next step"
               className="w-full rounded-xl border bg-background p-4 text-sm"
               rows={3}
             />
 
-            <Button onClick={saveCareerPlan}>
-              Save to Profile
-            </Button>
+            <Button onClick={saveCareerPlan}>Save to Profile</Button>
 
             {savedMessage && (
-              <p className="text-sm font-medium text-primary">
-                {savedMessage}
-              </p>
+              <p className="text-sm font-medium text-primary">{savedMessage}</p>
             )}
           </div>
         </div>
@@ -632,8 +771,7 @@ function CareerPlan() {
 
           <div className="mt-5 rounded-xl border bg-card p-4 text-sm">
             <p>
-              <strong>Target:</strong>{" "}
-              {targetRole || "Not entered yet"}
+              <strong>Target:</strong> {targetRole || "Not entered yet"}
             </p>
 
             <p className="mt-3">
@@ -652,8 +790,7 @@ function CareerPlan() {
             </p>
 
             <p className="mt-3">
-              <strong>Next Step:</strong>{" "}
-              {nextStep || "Not entered yet"}
+              <strong>Next Step:</strong> {nextStep || "Not entered yet"}
             </p>
           </div>
         </div>
