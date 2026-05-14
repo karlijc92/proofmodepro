@@ -141,6 +141,7 @@ function TrustTagsTab() {
       <SectionHeader title="TrustTags" text="Create, store, and manage skill-based TrustTags connected to your profile." />
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <DashboardCard title="Create New TrustTag" text="Start a new skill verification and unlock a TrustTag after passing." action="Create TrustTag" route="/create-trust-tag" />
         <DashboardCard title="Active TrustTags" text="No active TrustTags yet." action="View Active TrustTags" route="/profile-preview" />
         <DashboardCard title="Pending TrustTags" text="TrustTags waiting for payment, review, or evidence will appear here." action="View Pending TrustTags" route="/profile-preview" />
         <DashboardCard title="Needs More Evidence" text="TrustTags that need more proof will appear here." action="Open Evidence Manager" route="/profile/evidence-manager" />
