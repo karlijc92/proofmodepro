@@ -1,7 +1,7 @@
 import { ProofModeTrustTagRecord } from "@/data/proofmodeRecords";
 
-const TRUSTTAG_STORAGE_KEY = "proofmode_trusttags";
-const PENDING_ASSESSMENT_STORAGE_KEY = "proofmode_pending_assessment";
+const BASE_TRUSTTAG_STORAGE_KEY = "proofmode_trusttags";
+const BASE_PENDING_ASSESSMENT_STORAGE_KEY = "proofmode_pending_assessment";
 
 export type ProofModePendingEvidenceItem = {
   id: string;
@@ -31,9 +31,66 @@ export type ProofModePendingAssessment = {
   createdAt: string;
 };
 
+function getSafeStorageKeyPart(value: string) {
+  return value.replace(/[^a-zA-Z0-9-_]/g, "_");
+}
+
+function getSupabaseUserIdFromLocalStorage(): string | null {
+  try {
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+
+      if (!key || !key.startsWith("sb-") || !key.endsWith("-auth-token")) {
+        continue;
+      }
+
+      const raw = localStorage.getItem(key);
+
+      if (!raw) {
+        continue;
+      }
+
+      const parsed = JSON.parse(raw);
+
+      const userId =
+        parsed?.user?.id ||
+        parsed?.currentSession?.user?.id ||
+        parsed?.session?.user?.id;
+
+      if (typeof userId === "string" && userId.trim()) {
+        return userId.trim();
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function getTrustTagStorageKey() {
+  const userId = getSupabaseUserIdFromLocalStorage();
+
+  if (userId) {
+    return `${BASE_TRUSTTAG_STORAGE_KEY}_${getSafeStorageKeyPart(userId)}`;
+  }
+
+  return `${BASE_TRUSTTAG_STORAGE_KEY}_guest`;
+}
+
+function getPendingAssessmentStorageKey() {
+  const userId = getSupabaseUserIdFromLocalStorage();
+
+  if (userId) {
+    return `${BASE_PENDING_ASSESSMENT_STORAGE_KEY}_${getSafeStorageKeyPart(userId)}`;
+  }
+
+  return `${BASE_PENDING_ASSESSMENT_STORAGE_KEY}_guest`;
+}
+
 function loadTrustTagStore(): ProofModeTrustTagRecord[] {
   try {
-    const raw = localStorage.getItem(TRUSTTAG_STORAGE_KEY);
+    const raw = localStorage.getItem(getTrustTagStorageKey());
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -41,13 +98,16 @@ function loadTrustTagStore(): ProofModeTrustTagRecord[] {
 }
 
 function saveTrustTagStore(store: ProofModeTrustTagRecord[]) {
-  localStorage.setItem(TRUSTTAG_STORAGE_KEY, JSON.stringify(store));
+  localStorage.setItem(getTrustTagStorageKey(), JSON.stringify(store));
 }
 
 export function addTrustTagRecord(record: ProofModeTrustTagRecord) {
   const store = loadTrustTagStore();
+
   store.push(record);
+
   saveTrustTagStore(store);
+
   return record;
 }
 
@@ -64,17 +124,28 @@ export function getTrustTagById(trustTagId: string) {
 }
 
 export function clearTrustTagStore() {
-  localStorage.removeItem(TRUSTTAG_STORAGE_KEY);
+  localStorage.removeItem(getTrustTagStorageKey());
 }
 
-export function savePendingAssessment(pendingAssessment: ProofModePendingAssessment) {
-  localStorage.setItem(PENDING_ASSESSMENT_STORAGE_KEY, JSON.stringify(pendingAssessment));
+export function clearLegacyTrustTagStore() {
+  localStorage.removeItem(BASE_TRUSTTAG_STORAGE_KEY);
+}
+
+export function savePendingAssessment(
+  pendingAssessment: ProofModePendingAssessment
+) {
+  localStorage.setItem(
+    getPendingAssessmentStorageKey(),
+    JSON.stringify(pendingAssessment)
+  );
+
   return pendingAssessment;
 }
 
 export function getPendingAssessment(): ProofModePendingAssessment | null {
   try {
-    const raw = localStorage.getItem(PENDING_ASSESSMENT_STORAGE_KEY);
+    const raw = localStorage.getItem(getPendingAssessmentStorageKey());
+
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -82,5 +153,9 @@ export function getPendingAssessment(): ProofModePendingAssessment | null {
 }
 
 export function clearPendingAssessment() {
-  localStorage.removeItem(PENDING_ASSESSMENT_STORAGE_KEY);
+  localStorage.removeItem(getPendingAssessmentStorageKey());
+}
+
+export function clearLegacyPendingAssessment() {
+  localStorage.removeItem(BASE_PENDING_ASSESSMENT_STORAGE_KEY);
 }
