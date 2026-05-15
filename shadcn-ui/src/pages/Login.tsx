@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 
@@ -13,16 +13,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-import {
-  LogIn,
-  Loader2,
-} from 'lucide-react';
+import { LogIn, Loader2 } from 'lucide-react';
 
-import {
-  Link,
-  useLocation,
-  useNavigate,
-} from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import Footer from '@/components/Footer';
 import BackButton from '@/components/BackButton';
@@ -30,55 +23,33 @@ import BackButton from '@/components/BackButton';
 import { supabase } from '@/lib/supabase';
 
 export default function Login() {
-  const [email, setEmail] =
-    useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  const [password, setPassword] =
-    useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const [error, setError] =
-    useState('');
-
-  const [isLoading, setIsLoading] =
-    useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
 
   const fromPath =
-    (location.state as any)?.from
-      ?.pathname || '/profile';
+    (location.state as any)?.from?.pathname || '/profile';
 
-  useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        navigate(fromPath, {
-          replace: true,
-        });
-      }
-    };
-
-    checkUser();
-  }, [navigate, fromPath]);
-
-  const handleLogin = async (
-    e: React.FormEvent
-  ) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
     setError('');
+    setSuccess('');
     setIsLoading(true);
 
     try {
-      const { error } =
-        await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
       if (error) {
         throw error;
@@ -88,17 +59,43 @@ export default function Login() {
         replace: true,
       });
     } catch (err: any) {
-      console.error(
-        'Login error:',
-        err
-      );
+      console.error('Login error:', err);
 
       setError(
-        err?.message ||
-          'Failed to log in.'
+        err?.message || 'Failed to log in. Please check your email and password.'
       );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setError('');
+    setSuccess('');
+
+    if (!email.trim()) {
+      setError('Enter your email address first, then click Forgot Password.');
+      return;
+    }
+
+    setIsResetting(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/login`,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setSuccess('Password reset email sent. Please check your inbox.');
+    } catch (err: any) {
+      console.error('Password reset error:', err);
+
+      setError(err?.message || 'Failed to send password reset email.');
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -124,7 +121,6 @@ export default function Login() {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <LogIn className="w-5 h-5" />
-
                 <span>Sign In</span>
               </CardTitle>
 
@@ -134,13 +130,16 @@ export default function Login() {
             </CardHeader>
 
             <CardContent>
-              <form
-                onSubmit={handleLogin}
-                className="space-y-4"
-              >
+              <form onSubmit={handleLogin} className="space-y-4">
                 {error && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
                     {error}
+                  </div>
+                )}
+
+                {success && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-700 text-sm">
+                    {success}
                   </div>
                 )}
 
@@ -153,12 +152,10 @@ export default function Login() {
                     id="email"
                     type="email"
                     value={email}
-                    onChange={(e) =>
-                      setEmail(e.target.value)
-                    }
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="john@example.com"
                     required
-                    disabled={isLoading}
+                    disabled={isLoading || isResetting}
                   />
                 </div>
 
@@ -171,34 +168,36 @@ export default function Login() {
                     id="password"
                     type="password"
                     value={password}
-                    onChange={(e) =>
-                      setPassword(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter password"
                     required
-                    disabled={isLoading}
+                    disabled={isLoading || isResetting}
                   />
                 </div>
 
                 <Button
                   type="submit"
                   className="w-full bg-blue-600 hover:bg-blue-700"
-                  disabled={isLoading}
+                  disabled={isLoading || isResetting}
                 >
                   {isLoading ? (
                     <div className="flex items-center space-x-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
-
-                      <span>
-                        Logging In...
-                      </span>
+                      <span>Logging In...</span>
                     </div>
                   ) : (
                     'Log In'
                   )}
                 </Button>
+
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={isLoading || isResetting}
+                  className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-700 disabled:opacity-60"
+                >
+                  {isResetting ? 'Sending reset email...' : 'Forgot Password?'}
+                </button>
 
                 <div className="text-center text-sm text-gray-600">
                   Don&apos;t have an account?{' '}
