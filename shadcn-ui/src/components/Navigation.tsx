@@ -1,5 +1,6 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+
+import { Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 
@@ -15,8 +16,6 @@ import {
 } from "lucide-react";
 
 export default function Navigation() {
-  const navigate = useNavigate();
-
   const navLinks = [
     {
       href: "/pricing",
@@ -46,7 +45,7 @@ export default function Navigation() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
+      <div className="container flex h-14 items-center justify-between">
         <div className="mr-4 hidden md:flex">
           <Link
             to="/"
@@ -72,100 +71,53 @@ export default function Navigation() {
           </nav>
         </div>
 
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          {/* Mobile Menu */}
-          <div className="md:hidden">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  type="button"
-                >
-                  <Menu className="h-5 w-5" />
-
-                  <span className="sr-only">
-                    Toggle Menu
-                  </span>
-                </Button>
-              </SheetTrigger>
-
-              <SheetContent
-                side="left"
-                className="pr-0"
+        {/* Mobile Menu */}
+        <div className="md:hidden">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
               >
-                <Link
-                  to="/"
-                  className="flex items-center space-x-2"
-                >
-                  <ShieldCheck className="h-6 w-6 text-primary" />
+                <Menu className="h-5 w-5" />
 
-                  <span className="font-bold">
-                    ProofMode
-                  </span>
-                </Link>
+                <span className="sr-only">
+                  Toggle Menu
+                </span>
+              </Button>
+            </SheetTrigger>
 
-                <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
-                  <div className="flex flex-col space-y-3">
-                    {navLinks.map((link) => (
-                      <Link
-                        key={link.href}
-                        to={link.href}
-                        className="text-foreground"
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
-                  </div>
+            <SheetContent
+              side="left"
+              className="pr-0"
+            >
+              <Link
+                to="/"
+                className="flex items-center space-x-2"
+              >
+                <ShieldCheck className="h-6 w-6 text-primary" />
 
-                  <div className="mt-6 flex flex-col gap-2 pr-6">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate("/login")
-                      }
-                      className="inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium border border-transparent hover:bg-accent"
+                <span className="font-bold">
+                  ProofMode
+                </span>
+              </Link>
+
+              <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
+                <div className="flex flex-col space-y-3">
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      to={link.href}
+                      className="text-foreground"
                     >
-                      Log in
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate("/signup")
-                      }
-                      className="inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium hover:bg-accent"
-                    >
-                      Sign up
-                    </button>
-                  </div>
+                      {link.label}
+                    </Link>
+                  ))}
                 </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-
-          {/* Desktop Auth Buttons */}
-          <nav className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                navigate("/login")
-              }
-              className="inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium hover:bg-accent"
-            >
-              Log in
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                navigate("/signup")
-              }
-              className="inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium hover:bg-accent"
-            >
-              Sign up
-            </button>
-          </nav>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
