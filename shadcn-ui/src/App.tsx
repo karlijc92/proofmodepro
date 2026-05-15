@@ -3,6 +3,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+import RequireAuth from "./components/RequireAuth";
+
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Signup from "./pages/Signup";
@@ -37,19 +39,78 @@ const App = () => (
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
 
-          {/* Profile */}
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/profile/resume-builder" element={<ResumeBuilder />} />
+          <Route
+            path="/profile"
+            element={
+              <RequireAuth>
+                <Profile />
+              </RequireAuth>
+            }
+          />
 
-          {/* Profile Tools */}
-          <Route path="/profile/evidence-manager" element={<ProfileTool />} />
-          <Route path="/profile/interview-prep" element={<ProfileTool />} />
-          <Route path="/profile/role-play" element={<ProfileTool />} />
-          <Route path="/profile/skill-quizzes" element={<ProfileTool />} />
-          <Route path="/profile/job-tracker" element={<ProfileTool />} />
-          <Route path="/profile/career-plan" element={<ProfileTool />} />
+          <Route
+            path="/profile/resume-builder"
+            element={
+              <RequireAuth>
+                <ResumeBuilder />
+              </RequireAuth>
+            }
+          />
 
-          {/* Existing */}
+          <Route
+            path="/profile/evidence-manager"
+            element={
+              <RequireAuth>
+                <ProfileTool />
+              </RequireAuth>
+            }
+          />
+
+          <Route
+            path="/profile/interview-prep"
+            element={
+              <RequireAuth>
+                <ProfileTool />
+              </RequireAuth>
+            }
+          />
+
+          <Route
+            path="/profile/role-play"
+            element={
+              <RequireAuth>
+                <ProfileTool />
+              </RequireAuth>
+            }
+          />
+
+          <Route
+            path="/profile/skill-quizzes"
+            element={
+              <RequireAuth>
+                <ProfileTool />
+              </RequireAuth>
+            }
+          />
+
+          <Route
+            path="/profile/job-tracker"
+            element={
+              <RequireAuth>
+                <ProfileTool />
+              </RequireAuth>
+            }
+          />
+
+          <Route
+            path="/profile/career-plan"
+            element={
+              <RequireAuth>
+                <ProfileTool />
+              </RequireAuth>
+            }
+          />
+
           <Route path="/profile-preview" element={<ProfilePreview />} />
           <Route path="/verify" element={<Verify />} />
           <Route path="/partnership" element={<Partnership />} />
@@ -60,7 +121,6 @@ const App = () => (
           <Route path="/refund" element={<Refund />} />
           <Route path="/disclaimer" element={<Disclaimer />} />
 
-          {/* TrustTag Flow */}
           <Route path="/create-trust-tag" element={<CreateTrustTagPage />} />
           <Route path="/proof-upload/:id" element={<ProofUploadPage />} />
           <Route path="/assessment/:id" element={<AssessmentPage />} />
@@ -69,11 +129,7 @@ const App = () => (
             element={<AssessmentResultsPage />}
           />
 
-          {/* Future Payment Success Route */}
-          <Route
-            path="/payment-success"
-            element={<PaymentSuccessPage />}
-          />
+          <Route path="/payment-success" element={<PaymentSuccessPage />} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>
