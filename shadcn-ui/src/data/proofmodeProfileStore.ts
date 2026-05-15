@@ -55,7 +55,8 @@ export type ProofModeUnifiedProfile = {
   updatedAt: string;
 };
 
-const PROFILE_STORAGE_KEY = "proofmode_unified_profile";
+const BASE_PROFILE_STORAGE_KEY = "proofmode_unified_profile";
+const LEGACY_PROFILE_STORAGE_KEY = "proofmode_unified_profile";
 
 export const emptyResumeData: ProofModeResumeData = {
   fullName: "",
@@ -74,9 +75,57 @@ export const emptyCareerPlanData: ProofModeCareerPlanData = {
   nextStep: "",
 };
 
+function getSafeStorageKeyPart(value: string) {
+  return value.replace(/[^a-zA-Z0-9-_]/g, "_");
+}
+
+function getSupabaseUserIdFromLocalStorage(): string | null {
+  try {
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+
+      if (!key || !key.startsWith("sb-") || !key.endsWith("-auth-token")) {
+        continue;
+      }
+
+      const raw = localStorage.getItem(key);
+
+      if (!raw) {
+        continue;
+      }
+
+      const parsed = JSON.parse(raw);
+      const userId =
+        parsed?.user?.id ||
+        parsed?.currentSession?.user?.id ||
+        parsed?.session?.user?.id;
+
+      if (typeof userId === "string" && userId.trim()) {
+        return userId.trim();
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function getProfileStorageKey() {
+  const userId = getSupabaseUserIdFromLocalStorage();
+
+  if (userId) {
+    return `${BASE_PROFILE_STORAGE_KEY}_${getSafeStorageKeyPart(userId)}`;
+  }
+
+  return `${BASE_PROFILE_STORAGE_KEY}_guest`;
+}
+
 function createDefaultProfile(): ProofModeUnifiedProfile {
+  const userId = getSupabaseUserIdFromLocalStorage();
+
   return {
-    profileId: "PM-LOCAL-PREVIEW",
+    profileId: userId ? `PM-USER-${userId}` : "PM-GUEST-PREVIEW",
     profileType: "regular",
     subscriptionStatus: "none",
     resume: emptyResumeData,
@@ -89,11 +138,14 @@ function createDefaultProfile(): ProofModeUnifiedProfile {
 
 export function getUnifiedProfile(): ProofModeUnifiedProfile {
   try {
-    const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+    const storageKey = getProfileStorageKey();
+    const raw = localStorage.getItem(storageKey);
 
     if (!raw) {
       const profile = createDefaultProfile();
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+
+      localStorage.setItem(storageKey, JSON.stringify(profile));
+
       return profile;
     }
 
@@ -117,19 +169,25 @@ export function getUnifiedProfile(): ProofModeUnifiedProfile {
       updatedAt: parsed.updatedAt || new Date().toISOString(),
     };
   } catch {
+    const storageKey = getProfileStorageKey();
     const profile = createDefaultProfile();
-    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+
+    localStorage.setItem(storageKey, JSON.stringify(profile));
+
     return profile;
   }
 }
 
 export function saveUnifiedProfile(profile: ProofModeUnifiedProfile) {
+  const storageKey = getProfileStorageKey();
+
   const updatedProfile = {
     ...profile,
     updatedAt: new Date().toISOString(),
   };
 
-  localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(updatedProfile));
+  localStorage.setItem(storageKey, JSON.stringify(updatedProfile));
+
   return updatedProfile;
 }
 
@@ -138,6 +196,7 @@ export function updateUnifiedProfile(
 ) {
   const currentProfile = getUnifiedProfile();
   const updatedProfile = updater(currentProfile);
+
   return saveUnifiedProfile(updatedProfile);
 }
 
@@ -176,7 +235,9 @@ export function saveCareerPlanToUnifiedProfile(
   }));
 }
 
-export function addEvidenceNoteToUnifiedProfile(note: Omit<ProofModeEvidenceNote, "id" | "savedAt">) {
+export function addEvidenceNoteToUnifiedProfile(
+  note: Omit<ProofModeEvidenceNote, "id" | "savedAt">
+) {
   return updateUnifiedProfile((profile) => ({
     ...profile,
     evidenceNotes: [
@@ -191,5 +252,9 @@ export function addEvidenceNoteToUnifiedProfile(note: Omit<ProofModeEvidenceNote
 }
 
 export function clearUnifiedProfile() {
-  localStorage.removeItem(PROFILE_STORAGE_KEY);
+  localStorage.removeItem(getProfileStorageKey());
+}
+
+export function clearLegacyUnifiedProfileData() {
+  localStorage.removeItem(LEGACY_PROFILE_STORAGE_KEY);
 }
