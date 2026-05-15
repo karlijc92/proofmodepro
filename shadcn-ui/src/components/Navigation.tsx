@@ -1,69 +1,62 @@
-import React, { useRef } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, ShieldCheck } from "lucide-react";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-declare global {
-  interface Window {
-    MemberStack?: any;
-  }
-}
+import { Button } from "@/components/ui/button";
+
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+
+import {
+  Menu,
+  ShieldCheck,
+} from "lucide-react";
 
 export default function Navigation() {
+  const navigate = useNavigate();
+
   const navLinks = [
-    { href: "/pricing", label: "Pricing" },
-    { href: "/create-trust-tag", label: "Create a TrustTag" },
-    { href: "/partnership", label: "For Partners" },
-    { href: "/verify", label: "Verify a TrustTag" },
-    { href: "/contact", label: "Contact" },
+    {
+      href: "/pricing",
+      label: "Pricing",
+    },
+
+    {
+      href: "/create-trust-tag",
+      label: "Create a TrustTag",
+    },
+
+    {
+      href: "/partnership",
+      label: "For Partners",
+    },
+
+    {
+      href: "/verify",
+      label: "Verify a TrustTag",
+    },
+
+    {
+      href: "/contact",
+      label: "Contact",
+    },
   ];
-
-  // Hidden anchors Memberstack listens to (most reliable trigger)
-  const loginLinkRef = useRef<HTMLAnchorElement | null>(null);
-  const signupLinkRef = useRef<HTMLAnchorElement | null>(null);
-
-  const openLogin = () => {
-    // If Memberstack JS API exists, try it first
-    try {
-      if (window.MemberStack?.openModal) {
-        window.MemberStack.openModal("LOGIN");
-        return;
-      }
-    } catch {
-      // ignore
-    }
-    // Fallback: click hidden trigger
-    loginLinkRef.current?.click();
-  };
-
-  const openSignup = () => {
-    try {
-      if (window.MemberStack?.openModal) {
-        window.MemberStack.openModal("SIGNUP");
-        return;
-      }
-    } catch {
-      // ignore
-    }
-    signupLinkRef.current?.click();
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
-        {/* Hidden Memberstack modal triggers */}
-        <a ref={loginLinkRef} data-ms-modal="login" style={{ display: "none" }}>
-          hidden-login
-        </a>
-        <a ref={signupLinkRef} data-ms-modal="signup" style={{ display: "none" }}>
-          hidden-signup
-        </a>
-
         <div className="mr-4 hidden md:flex">
-          <Link to="/" className="mr-6 flex items-center space-x-2">
+          <Link
+            to="/"
+            className="mr-6 flex items-center space-x-2"
+          >
             <ShieldCheck className="h-6 w-6 text-primary" />
-            <span className="hidden font-bold sm:inline-block">ProofMode</span>
+
+            <span className="hidden font-bold sm:inline-block">
+              ProofMode
+            </span>
           </Link>
 
           <nav className="flex items-center space-x-6 text-sm font-medium">
@@ -80,36 +73,57 @@ export default function Navigation() {
         </div>
 
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          {/* Mobile menu */}
+          {/* Mobile Menu */}
           <div className="md:hidden">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" type="button">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                >
                   <Menu className="h-5 w-5" />
-                  <span className="sr-only">Toggle Menu</span>
+
+                  <span className="sr-only">
+                    Toggle Menu
+                  </span>
                 </Button>
               </SheetTrigger>
 
-              <SheetContent side="left" className="pr-0">
-                <Link to="/" className="flex items-center space-x-2">
+              <SheetContent
+                side="left"
+                className="pr-0"
+              >
+                <Link
+                  to="/"
+                  className="flex items-center space-x-2"
+                >
                   <ShieldCheck className="h-6 w-6 text-primary" />
-                  <span className="font-bold">ProofMode</span>
+
+                  <span className="font-bold">
+                    ProofMode
+                  </span>
                 </Link>
 
                 <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
                   <div className="flex flex-col space-y-3">
                     {navLinks.map((link) => (
-                      <Link key={link.href} to={link.href} className="text-foreground">
+                      <Link
+                        key={link.href}
+                        to={link.href}
+                        className="text-foreground"
+                      >
                         {link.label}
                       </Link>
                     ))}
                   </div>
 
-                  {/* Member actions (mobile) */}
                   <div className="mt-6 flex flex-col gap-2 pr-6">
                     <button
                       type="button"
-                      onClick={openLogin}
+                      onClick={() =>
+                        navigate("/login")
+                      }
                       className="inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium border border-transparent hover:bg-accent"
                     >
                       Log in
@@ -117,8 +131,10 @@ export default function Navigation() {
 
                     <button
                       type="button"
-                      onClick={openSignup}
-                      className="inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium border hover:bg-accent"
+                      onClick={() =>
+                        navigate("/signup")
+                      }
+                      className="inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium hover:bg-accent"
                     >
                       Sign up
                     </button>
@@ -128,11 +144,13 @@ export default function Navigation() {
             </Sheet>
           </div>
 
-          {/* Member actions (desktop) */}
+          {/* Desktop Auth Buttons */}
           <nav className="flex items-center gap-2">
             <button
               type="button"
-              onClick={openLogin}
+              onClick={() =>
+                navigate("/login")
+              }
               className="inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium hover:bg-accent"
             >
               Log in
@@ -140,7 +158,9 @@ export default function Navigation() {
 
             <button
               type="button"
-              onClick={openSignup}
+              onClick={() =>
+                navigate("/signup")
+              }
               className="inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium hover:bg-accent"
             >
               Sign up
