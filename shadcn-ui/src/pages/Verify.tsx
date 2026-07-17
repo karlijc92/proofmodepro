@@ -13,9 +13,12 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { getTrustTagById } from "@/data/proofmodeStore";
+import {
+  getTrustTagByVerificationCode,
+  SupabaseTrustTagRow,
+} from "@/data/proofmodeStore";
 
-type VerificationState = "idle" | "found" | "not_found";
+type VerificationState = "idle" | "loading" | "found" | "not_found";
 
 const formatStatus = (value?: string) => {
   if (!value) return "Unknown";
@@ -25,7 +28,7 @@ const formatStatus = (value?: string) => {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
-const formatDateSafe = (value?: string) => {
+const formatDateSafe = (value?: string | null) => {
   if (!value) return "Not issued yet";
 
   const parsed = new Date(value);
@@ -49,24 +52,32 @@ const Verify = () => {
 
   const [trustTagId, setTrustTagId] = useState(initialQueryTagId);
   const [searchedId, setSearchedId] = useState("");
+  const [verifiedRecord, setVerifiedRecord] = useState<SupabaseTrustTagRow | null>(null);
   const [verificationState, setVerificationState] =
     useState<VerificationState>("idle");
 
   const normalizedInput = useMemo(() => trustTagId.trim(), [trustTagId]);
 
-  const verifiedRecord = useMemo(() => {
-    if (!searchedId) return null;
-    return getTrustTagById(searchedId);
-  }, [searchedId]);
+  const runVerification = async (code: string) => {
+    setVerificationState("loading");
+    setSearchedId(code);
+
+    try {
+      const record = await getTrustTagByVerificationCode(code);
+      setVerifiedRecord(record);
+      setVerificationState(record ? "found" : "not_found");
+    } catch (error) {
+      console.error("Verification lookup failed:", error);
+      setVerifiedRecord(null);
+      setVerificationState("not_found");
+    }
+  };
 
   useEffect(() => {
     if (!initialQueryTagId) return;
 
     setTrustTagId(initialQueryTagId);
-    setSearchedId(initialQueryTagId);
-
-    const record = getTrustTagById(initialQueryTagId);
-    setVerificationState(record ? "found" : "not_found");
+    runVerification(initialQueryTagId);
   }, [initialQueryTagId]);
 
   const handleVerify = () => {
@@ -74,14 +85,12 @@ const Verify = () => {
 
     if (!cleanedId) {
       setSearchedId("");
+      setVerifiedRecord(null);
       setVerificationState("idle");
       return;
     }
 
-    const record = getTrustTagById(cleanedId);
-
-    setSearchedId(cleanedId);
-    setVerificationState(record ? "found" : "not_found");
+    runVerification(cleanedId);
   };
 
   const renderResult = () => {
@@ -99,6 +108,16 @@ const Verify = () => {
                 </p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (verificationState === "loading") {
+      return (
+        <Card className="border-border/60 shadow-sm">
+          <CardContent className="pt-6">
+            <p className="text-sm text-muted-foreground">Checking...</p>
           </CardContent>
         </Card>
       );
@@ -129,7 +148,7 @@ const Verify = () => {
     const finalVerified = isFinalVerifiedStatus(verifiedRecord.status);
     const displayStatus = formatStatus(verifiedRecord.status);
     const expiresDisplay = finalVerified
-      ? formatDateSafe(verifiedRecord.expiresAt)
+      ? formatDateSafe(verifiedRecord.expires_at)
       : "Will be set after final issuance";
 
     return (
@@ -159,7 +178,7 @@ const Verify = () => {
                 TrustTag ID
               </p>
               <p className="mt-1 break-all font-medium">
-                {verifiedRecord.trustTagId}
+                {verifiedRecord.verification_code}
               </p>
             </div>
 
@@ -167,7 +186,7 @@ const Verify = () => {
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 Skill
               </p>
-              <p className="mt-1 font-medium">{verifiedRecord.skillName}</p>
+              <p className="mt-1 font-medium">{verifiedRecord.skill_name}</p>
             </div>
 
             <div className="rounded-lg border bg-background p-4">
@@ -182,15 +201,17 @@ const Verify = () => {
                 Assessment Score
               </p>
               <p className="mt-1 font-medium">
-                {verifiedRecord.assessmentScorePercent}%
+                {verifiedRecord.score}%
               </p>
             </div>
 
             <div className="rounded-lg border bg-background p-4">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Evidence Count
+                Issued
               </p>
-              <p className="mt-1 font-medium">{verifiedRecord.evidenceCount}</p>
+              <p className="mt-1 font-medium">
+                {formatDateSafe(verifiedRecord.issued_at)}
+              </p>
             </div>
 
             <div className="rounded-lg border bg-background p-4">
@@ -199,15 +220,6 @@ const Verify = () => {
               </p>
               <p className="mt-1 font-medium">{expiresDisplay}</p>
             </div>
-          </div>
-
-          <div className="rounded-lg border bg-muted/30 p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Profile ID
-            </p>
-            <p className="mt-1 break-all text-sm font-medium">
-              {verifiedRecord.profileId}
-            </p>
           </div>
         </CardContent>
       </Card>
