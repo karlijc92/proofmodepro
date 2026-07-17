@@ -1,173 +1,195 @@
-import { supabase } from "@/lib/supabase";
+export type ProofModeProfileType =
+  | "regular"
+  | "student"
+  | "business"
+  | "organization";
 
-// ---- Pending assessment (kept as localStorage — this is fine, it's just
-// in-progress quiz state before payment, not the permanent record) ----
+export type ProofModeSubscriptionStatus =
+  | "none"
+  | "active"
+  | "past_due"
+  | "canceled";
 
-const BASE_PENDING_ASSESSMENT_STORAGE_KEY = "proofmode_pending_assessment";
+export type ProofModeResumeData = {
+  fullName: string;
+  headline: string;
+  summary: string;
+  skills: string;
+  experience: string;
+  education: string;
+};
 
-export type ProofModePendingEvidenceItem = {
+export type ProofModeJobTrackerEntry = {
   id: string;
-  name: string;
-  typeLabel: string;
-  sizeLabel: string;
-  uploadedAt: string;
+  jobTitle: string;
+  company: string;
+  status: string;
+  savedAt: string;
 };
 
-export type ProofModePendingAssessmentAnswer = {
-  questionId: string;
-  answerId: string;
-  answerText: string;
+export type ProofModeCareerPlanData = {
+  targetRole: string;
+  currentStrengths: string;
+  skillsToBuild: string;
+  trustTagsToEarn: string;
+  nextStep: string;
+  savedAt?: string;
 };
 
-export type ProofModePendingAssessment = {
+export type ProofModeEvidenceNote = {
   id: string;
-  assessmentId: string;
-  assessmentTitle: string;
-  skillCodes: string[];
-  score: number;
-  correctAnswersCount: number;
-  totalQuestions: number;
-  answers: ProofModePendingAssessmentAnswer[];
-  evidenceItems: ProofModePendingEvidenceItem[];
-  passed: boolean;
-  createdAt: string;
+  title: string;
+  skillArea: string;
+  description: string;
+  savedAt: string;
 };
 
-function getSafeStorageKeyPart(value: string) {
-  return value.replace(/[^a-zA-Z0-9-_]/g, "_");
+export type ProofModeUnifiedProfile = {
+  profileId: string;
+  profileType: ProofModeProfileType;
+  subscriptionStatus: ProofModeSubscriptionStatus;
+  resume: ProofModeResumeData;
+  jobTracker: ProofModeJobTrackerEntry[];
+  careerPlan: ProofModeCareerPlanData;
+  evidenceNotes: ProofModeEvidenceNote[];
+  updatedAt: string;
+};
+
+const PROFILE_STORAGE_KEY = "proofmode_unified_profile";
+
+export const emptyResumeData: ProofModeResumeData = {
+  fullName: "",
+  headline: "",
+  summary: "",
+  skills: "",
+  experience: "",
+  education: "",
+};
+
+export const emptyCareerPlanData: ProofModeCareerPlanData = {
+  targetRole: "",
+  currentStrengths: "",
+  skillsToBuild: "",
+  trustTagsToEarn: "",
+  nextStep: "",
+};
+
+function createDefaultProfile(): ProofModeUnifiedProfile {
+  return {
+    profileId: "PM-LOCAL-PREVIEW",
+    profileType: "regular",
+    subscriptionStatus: "none",
+    resume: emptyResumeData,
+    jobTracker: [],
+    careerPlan: emptyCareerPlanData,
+    evidenceNotes: [],
+    updatedAt: new Date().toISOString(),
+  };
 }
 
-async function getRealUserId(): Promise<string | null> {
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data?.user) return null;
-  return data.user.id;
-}
-
-function getPendingAssessmentStorageKey(userId: string | null) {
-  if (userId) {
-    return `${BASE_PENDING_ASSESSMENT_STORAGE_KEY}_${getSafeStorageKeyPart(userId)}`;
-  }
-  return `${BASE_PENDING_ASSESSMENT_STORAGE_KEY}_guest`;
-}
-
-export async function savePendingAssessment(
-  pendingAssessment: ProofModePendingAssessment
-) {
-  const userId = await getRealUserId();
-  localStorage.setItem(
-    getPendingAssessmentStorageKey(userId),
-    JSON.stringify(pendingAssessment)
-  );
-  return pendingAssessment;
-}
-
-export async function getPendingAssessment(): Promise<ProofModePendingAssessment | null> {
+export function getUnifiedProfile(): ProofModeUnifiedProfile {
   try {
-    const userId = await getRealUserId();
-    const raw = localStorage.getItem(getPendingAssessmentStorageKey(userId));
-    return raw ? JSON.parse(raw) : null;
+    const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+
+    if (!raw) {
+      const profile = createDefaultProfile();
+      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+      return profile;
+    }
+
+    const parsed = JSON.parse(raw) as Partial<ProofModeUnifiedProfile>;
+
+    return {
+      ...createDefaultProfile(),
+      ...parsed,
+      resume: {
+        ...emptyResumeData,
+        ...(parsed.resume || {}),
+      },
+      careerPlan: {
+        ...emptyCareerPlanData,
+        ...(parsed.careerPlan || {}),
+      },
+      jobTracker: Array.isArray(parsed.jobTracker) ? parsed.jobTracker : [],
+      evidenceNotes: Array.isArray(parsed.evidenceNotes)
+        ? parsed.evidenceNotes
+        : [],
+      updatedAt: parsed.updatedAt || new Date().toISOString(),
+    };
   } catch {
-    return null;
+    const profile = createDefaultProfile();
+    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+    return profile;
   }
 }
 
-export async function clearPendingAssessment() {
-  const userId = await getRealUserId();
-  localStorage.removeItem(getPendingAssessmentStorageKey(userId));
+export function saveUnifiedProfile(profile: ProofModeUnifiedProfile) {
+  const updatedProfile = {
+    ...profile,
+    updatedAt: new Date().toISOString(),
+  };
+
+  localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(updatedProfile));
+  return updatedProfile;
 }
 
-// ---- TrustTags — now backed by Supabase, matched to the real `trusttags`
-// table schema (user_id, skill_name, score, verification_code, status,
-// issued_at, expires_at, assessment_id, submission_id, verification_url) ----
-
-export interface SupabaseTrustTagRow {
-  id: string;
-  created_at: string;
-  user_id: string;
-  assessment_id: string | null;
-  skill_name: string;
-  score: number;
-  verification_code: string;
-  issued_at: string | null;
-  status: string;
-  expires_at: string | null;
-  submission_id: string | null;
-  verification_url: string | null;
+export function updateUnifiedProfile(
+  updater: (profile: ProofModeUnifiedProfile) => ProofModeUnifiedProfile
+) {
+  const currentProfile = getUnifiedProfile();
+  const updatedProfile = updater(currentProfile);
+  return saveUnifiedProfile(updatedProfile);
 }
 
-export interface AddTrustTagInput {
-  skillName: string;
-  score: number;
-  verificationCode: string;
-  status: string;
-  issuedAt?: string | null;
-  expiresAt?: string | null;
-  assessmentId?: string | null;
-  submissionId?: string | null;
-  verificationUrl?: string | null;
+export function saveResumeToUnifiedProfile(resume: ProofModeResumeData) {
+  return updateUnifiedProfile((profile) => ({
+    ...profile,
+    resume,
+  }));
 }
 
-export async function addTrustTagRecord(
-  input: AddTrustTagInput
-): Promise<SupabaseTrustTagRow> {
-  const userId = await getRealUserId();
-  if (!userId) {
-    throw new Error(
-      "Cannot issue a TrustTag: no logged-in Supabase user was found."
-    );
-  }
-
-  const { data, error } = await supabase
-    .from("trusttags")
-    .insert({
-      user_id: userId,
-      skill_name: input.skillName,
-      score: input.score,
-      verification_code: input.verificationCode,
-      status: input.status,
-      issued_at: input.issuedAt ?? null,
-      expires_at: input.expiresAt ?? null,
-      assessment_id: input.assessmentId ?? null,
-      submission_id: input.submissionId ?? null,
-      verification_url: input.verificationUrl ?? null,
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data as SupabaseTrustTagRow;
+export function clearResumeFromUnifiedProfile() {
+  return updateUnifiedProfile((profile) => ({
+    ...profile,
+    resume: emptyResumeData,
+  }));
 }
 
-export async function getAllTrustTagsForCurrentUser(): Promise<SupabaseTrustTagRow[]> {
-  const userId = await getRealUserId();
-  if (!userId) return [];
-
-  const { data, error } = await supabase
-    .from("trusttags")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return data as SupabaseTrustTagRow[];
+export function addJobTrackerEntryToUnifiedProfile(
+  entry: ProofModeJobTrackerEntry
+) {
+  return updateUnifiedProfile((profile) => ({
+    ...profile,
+    jobTracker: [...profile.jobTracker, entry],
+  }));
 }
 
-export async function getTrustTagsForSkill(
-  skillName: string
-): Promise<SupabaseTrustTagRow[]> {
-  const all = await getAllTrustTagsForCurrentUser();
-  return all.filter((record) => record.skill_name === skillName);
+export function saveCareerPlanToUnifiedProfile(
+  careerPlan: ProofModeCareerPlanData
+) {
+  return updateUnifiedProfile((profile) => ({
+    ...profile,
+    careerPlan: {
+      ...careerPlan,
+      savedAt: new Date().toISOString(),
+    },
+  }));
 }
 
-export async function getTrustTagByVerificationCode(
-  verificationCode: string
-): Promise<SupabaseTrustTagRow | null> {
-  const { data, error } = await supabase
-    .from("trusttags")
-    .select("*")
-    .eq("verification_code", verificationCode)
-    .maybeSingle();
+export function addEvidenceNoteToUnifiedProfile(note: Omit<ProofModeEvidenceNote, "id" | "savedAt">) {
+  return updateUnifiedProfile((profile) => ({
+    ...profile,
+    evidenceNotes: [
+      ...profile.evidenceNotes,
+      {
+        ...note,
+        id: `evidence-note-${Date.now()}`,
+        savedAt: new Date().toISOString(),
+      },
+    ],
+  }));
+}
 
-  if (error) throw error;
-  return data as SupabaseTrustTagRow | null;
+export function clearUnifiedProfile() {
+  localStorage.removeItem(PROFILE_STORAGE_KEY);
 }
