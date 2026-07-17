@@ -3,8 +3,10 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getAllTrustTags, clearTrustTagStore } from "@/data/proofmodeStore";
-import { ProofModeTrustTagRecord } from "@/data/proofmodeRecords";
+import {
+  getAllTrustTagsForCurrentUser,
+  SupabaseTrustTagRow,
+} from "@/data/proofmodeStore";
 
 function formatStatus(status: string) {
   switch (status) {
@@ -21,7 +23,7 @@ function formatStatus(status: string) {
   }
 }
 
-function formatDate(value?: string) {
+function formatDate(value?: string | null) {
   if (!value) return "Not set yet";
 
   const date = new Date(value);
@@ -34,20 +36,21 @@ function formatDate(value?: string) {
 }
 
 export default function ProfilePreview() {
-  const [trustTags, setTrustTags] = useState<ProofModeTrustTagRecord[]>([]);
+  const [trustTags, setTrustTags] = useState<SupabaseTrustTagRow[]>([]);
   const [storageChecked, setStorageChecked] = useState(false);
 
   useEffect(() => {
-    const records = getAllTrustTags();
-    setTrustTags(records);
-    setStorageChecked(true);
+    getAllTrustTagsForCurrentUser()
+      .then((records) => {
+        setTrustTags(records);
+        setStorageChecked(true);
+      })
+      .catch((error) => {
+        console.error("Failed to load TrustTags:", error);
+        setTrustTags([]);
+        setStorageChecked(true);
+      });
   }, []);
-
-  const handleClearPreviewData = () => {
-    clearTrustTagStore();
-    setTrustTags([]);
-    window.location.reload();
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -71,52 +74,25 @@ export default function ProfilePreview() {
                 <>
                   {trustTags.map((tag) => (
                     <div
-                      key={tag.trustTagId}
+                      key={tag.id}
                       className="border rounded-md p-4 bg-white"
                     >
-                      <p className="font-semibold">{tag.skillName}</p>
+                      <p className="font-semibold">{tag.skill_name}</p>
 
                       <p className="text-sm text-gray-600">
-                        TrustTag ID: {tag.trustTagId}
+                        Verification Code: {tag.verification_code}
                       </p>
 
                       <p className="text-sm text-gray-600">
-                        Score: {tag.assessmentScorePercent}%
+                        Score: {tag.score}%
                       </p>
 
                       <p className="text-sm text-gray-600">
-                        Evidence Items: {tag.evidenceCount}
-                      </p>
-
-                      {tag.evidenceItems && tag.evidenceItems.length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-sm font-medium text-gray-700">
-                            Evidence Files:
-                          </p>
-
-                          <ul className="mt-1 space-y-1">
-                            {tag.evidenceItems.map((item) => (
-                              <li
-                                key={item.id}
-                                className="text-sm text-gray-600"
-                              >
-                                {item.name} — {item.type}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      <p className="text-sm text-gray-600 mt-2">
-                        Profile ID: {tag.profileId}
+                        Issued: {formatDate(tag.issued_at)}
                       </p>
 
                       <p className="text-sm text-gray-600">
-                        Issued: {formatDate(tag.issuedAt)}
-                      </p>
-
-                      <p className="text-sm text-gray-600">
-                        Expires: {formatDate(tag.expiresAt)}
+                        Expires: {formatDate(tag.expires_at)}
                       </p>
 
                       <p className="text-sm text-gray-500">
@@ -124,12 +100,6 @@ export default function ProfilePreview() {
                       </p>
                     </div>
                   ))}
-
-                  <div className="pt-2">
-                    <Button variant="outline" onClick={handleClearPreviewData}>
-                      Clear Preview Data
-                    </Button>
-                  </div>
                 </>
               )}
             </CardContent>
