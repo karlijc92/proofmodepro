@@ -1,9 +1,58 @@
+import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import { supabase } from '@/lib/supabase';
 
 export default function PricingPage() {
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handlePurchase = async (planId: string) => {
+    setErrorMessage(null);
+    setLoadingPlan(planId);
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      if (!accessToken) {
+        setErrorMessage("Please log in before purchasing a plan.");
+        setLoadingPlan(null);
+        return;
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/create-checkout-session`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ planId }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.url) {
+        throw new Error(result.error || "Failed to start checkout");
+      }
+
+      window.location.href = result.url;
+    } catch (error) {
+      console.error("Purchase error:", error);
+      setErrorMessage(
+        error instanceof Error ? error.message : "Something went wrong. Please try again."
+      );
+      setLoadingPlan(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navigation />
@@ -11,9 +60,13 @@ export default function PricingPage() {
       <main className="flex-grow container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto text-center">
           <h1 className="text-4xl font-bold mb-4">Turn Your Skills Into Proof</h1>
-          <p className="text-gray-600 mb-10">
+          <p className="text-gray-600 mb-4">
             Get verified, get trusted, and get hired faster — even without traditional credentials.
           </p>
+
+          {errorMessage && (
+            <p className="text-sm text-red-600 mb-6">{errorMessage}</p>
+          )}
 
           <div className="grid md:grid-cols-3 gap-6">
 
@@ -22,7 +75,7 @@ export default function PricingPage() {
               <CardHeader>
                 <CardTitle>Single TrustTag</CardTitle>
                 <CardDescription>
-                  <span className="line-through text-gray-400">$29</span> <span className="text-2xl font-bold">$19</span>
+                  <span className="text-2xl font-bold">$19</span>
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -37,9 +90,13 @@ export default function PricingPage() {
                   <li>✔ lifetime access — no expiration</li>
                 </ul>
 
-                <a href="https://buy.stripe.com/3cI14ogoZ8cyaWW1VteME06">
-                  <Button className="w-full">Unlock Your TrustTag</Button>
-                </a>
+                <Button
+                  className="w-full"
+                  disabled={loadingPlan === "single"}
+                  onClick={() => handlePurchase("single")}
+                >
+                  {loadingPlan === "single" ? "Loading..." : "Unlock Your TrustTag"}
+                </Button>
               </CardContent>
             </Card>
 
@@ -63,9 +120,13 @@ export default function PricingPage() {
                   <li>✔ lifetime access</li>
                 </ul>
 
-                <a href="https://buy.stripe.com/14A7sM7St3Wi9SS1VteME07">
-                  <Button className="w-full">Get 3 TrustTags</Button>
-                </a>
+                <Button
+                  className="w-full"
+                  disabled={loadingPlan === "triple"}
+                  onClick={() => handlePurchase("triple")}
+                >
+                  {loadingPlan === "triple" ? "Loading..." : "Get 3 TrustTags"}
+                </Button>
               </CardContent>
             </Card>
 
@@ -89,9 +150,13 @@ export default function PricingPage() {
                   <li>✔ lifetime access</li>
                 </ul>
 
-                <a href="https://buy.stripe.com/14A14o0q1eAW0ii0RpeME08">
-                  <Button className="w-full">Best Value</Button>
-                </a>
+                <Button
+                  className="w-full"
+                  disabled={loadingPlan === "five"}
+                  onClick={() => handlePurchase("five")}
+                >
+                  {loadingPlan === "five" ? "Loading..." : "Best Value"}
+                </Button>
               </CardContent>
             </Card>
 
@@ -115,9 +180,13 @@ export default function PricingPage() {
                   <li>✔ stay relevant as your skills grow</li>
                 </ul>
 
-                <a href="https://buy.stripe.com/5kQ6oIa0BeAWaWW8jReME09">
-                  <Button className="w-full">Start Career Plan</Button>
-                </a>
+                <Button
+                  className="w-full"
+                  disabled={loadingPlan === "career"}
+                  onClick={() => handlePurchase("career")}
+                >
+                  {loadingPlan === "career" ? "Loading..." : "Start Career Plan"}
+                </Button>
               </CardContent>
             </Card>
 
@@ -141,9 +210,13 @@ export default function PricingPage() {
                   <li>✔ scale trusted workforce quickly</li>
                 </ul>
 
-                <a href="https://buy.stripe.com/eVq8wQfkV9gC2qqeIfeME0a">
-                  <Button className="w-full">Start Business Plan</Button>
-                </a>
+                <Button
+                  className="w-full"
+                  disabled={loadingPlan === "business"}
+                  onClick={() => handlePurchase("business")}
+                >
+                  {loadingPlan === "business" ? "Loading..." : "Start Business Plan"}
+                </Button>
               </CardContent>
             </Card>
 
