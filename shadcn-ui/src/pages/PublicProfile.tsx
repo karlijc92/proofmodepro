@@ -38,42 +38,28 @@ export default function PublicProfile() {
       <Navigation />
 
       <main className="container mx-auto px-4 py-10">
-        {loading && (
-          <p className="text-sm text-muted-foreground">Loading profile...</p>
-        )}
+        {loading && <p className="text-sm text-muted-foreground">Loading profile...</p>}
 
         {!loading && notFound && (
           <div className="rounded-2xl border bg-card p-8 text-center">
             <h1 className="text-2xl font-bold text-foreground">Profile Not Found</h1>
-            <p className="mt-2 text-muted-foreground">
-              This profile does not exist or is not currently public.
-            </p>
+            <p className="mt-2 text-muted-foreground">This profile does not exist or is not currently public.</p>
           </div>
         )}
 
         {!loading && profile && (
           <div className="mx-auto max-w-3xl">
             <section className="rounded-2xl border bg-card p-8 shadow-sm">
-              <h1 className="text-3xl font-bold text-foreground">
-                {profile.fullName || "ProofMode User"}
-              </h1>
+              <h1 className="text-3xl font-bold text-foreground">{profile.fullName || "ProofMode User"}</h1>
 
-              {profile.headline && (
-                <p className="mt-2 text-lg font-medium text-primary">
-                  {profile.headline}
-                </p>
-              )}
+              {profile.headline && <p className="mt-2 text-lg font-medium text-primary">{profile.headline}</p>}
 
-              {profile.bio && (
-                <p className="mt-4 text-muted-foreground">{profile.bio}</p>
-              )}
+              {profile.bio && <p className="mt-4 text-muted-foreground">{profile.bio}</p>}
 
               {profile.resumeSummary && (
                 <div className="mt-6 border-t pt-4">
                   <h2 className="font-semibold text-foreground">Summary</h2>
-                  <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
-                    {profile.resumeSummary}
-                  </p>
+                  <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">{profile.resumeSummary}</p>
                 </div>
               )}
             </section>
@@ -90,17 +76,8 @@ export default function PublicProfile() {
                       <div key={tag.verificationCode} className="rounded-xl border bg-background p-4 text-sm">
                         <p className="font-semibold text-foreground">{tag.skillName}</p>
                         <p className="mt-1 text-muted-foreground">Score: {tag.score}%</p>
-                        <p className="mt-1 text-muted-foreground">
-                          Issued: {new Date(tag.issuedAt).toLocaleDateString()}
-                        </p>
-                        
-                          href={tag.verificationUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-3 inline-block text-sm font-medium text-primary underline"
-                        >
-                          Verify this TrustTag
-                        </a>
+                        <p className="mt-1 text-muted-foreground">Issued: {new Date(tag.issuedAt).toLocaleDateString()}</p>
+                        <a href={tag.verificationUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-sm font-medium text-primary underline">Verify this TrustTag</a>
                       </div>
                     );
                   })}
