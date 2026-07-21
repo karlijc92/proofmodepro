@@ -41,6 +41,20 @@ export type ProofModePublicSettings = {
   isPublic: boolean;
 };
 
+export type ProofModePublicProfile = {
+  fullName: string;
+  headline: string;
+  bio: string;
+  resumeSummary: string;
+  trustTags: {
+    skillName: string;
+    score: number;
+    verificationCode: string;
+    verificationUrl: string;
+    issuedAt: string;
+  }[];
+};
+
 export const emptyResumeData: ProofModeResumeData = {
   fullName: "",
   headline: "",
@@ -269,7 +283,7 @@ export async function addJobTrackerEntryToUnifiedProfile(
   };
 }
 
-// ---------- Public profile settings ----------
+// ---------- Public profile settings (owner-side, requires login) ----------
 
 export async function getPublicSettings(): Promise<ProofModePublicSettings> {
   const userId = await getCurrentUserId();
@@ -318,4 +332,45 @@ export async function savePublicSettings(settings: ProofModePublicSettings) {
   }
 
   return { ...settings, slug: cleanSlug };
+}
+
+// ---------- Public profile lookup (visitor-side, no login required) ----------
+
+export async function getPublicProfileBySlug(
+  slug: string
+): Promise<ProofModePublicProfile | null> {
+  const { data: userRow, error: userError } = await supabase
+    .from("users")
+    .select("id, full_name, profile_headline, profile_bio, profile_public")
+    .eq("profile_slug", slug)
+    .eq("profile_public", true)
+    .maybeSingle();
+
+  if (userError || !userRow) return null;
+
+  const { data: resumeRow } = await supabase
+    .from("resumes")
+    .select("summary")
+    .eq("user_id", userRow.id)
+    .maybeSingle();
+
+  const { data: tagRows } = await supabase
+    .from("trusttags")
+    .select("skill_name, score, verification_code, verification_url, issued_at, status")
+    .eq("user_id", userRow.id)
+    .eq("status", "verified");
+
+  return {
+    fullName: userRow.full_name || "",
+    headline: userRow.profile_headline || "",
+    bio: userRow.profile_bio || "",
+    resumeSummary: resumeRow?.summary || "",
+    trustTags: (tagRows || []).map((tag) => ({
+      skillName: tag.skill_name,
+      score: tag.score,
+      verificationCode: tag.verification_code,
+      verificationUrl: tag.verification_url,
+      issuedAt: tag.issued_at,
+    })),
+  };
 }
