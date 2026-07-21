@@ -17,9 +17,31 @@ async function findAssessmentIdBySkillName(
     .select("id")
     .ilike("skill_name", skillName)
     .maybeSingle();
-
   if (error || !data) return null;
   return data.id;
+}
+
+async function getUserCredits(userId: string): Promise<number> {
+  const { data, error } = await supabase
+    .from("users")
+    .select("trusttag_credits")
+    .eq("id", userId)
+    .single();
+  if (error || !data) {
+    throw new Error("Could not verify your remaining TrustTag credits.");
+  }
+  return data.trusttag_credits ?? 0;
+}
+
+async function decrementUserCredits(userId: string, currentCredits: number) {
+  const { error } = await supabase
+    .from("users")
+    .update({ trusttag_credits: currentCredits - 1 })
+    .eq("id", userId);
+  if (error) {
+    // Non-fatal to the user's TrustTag, but log for follow-up
+    console.error("Failed to decrement trusttag_credits:", error);
+  }
 }
 
 export async function processProofModeSubmission(
@@ -35,10 +57,17 @@ export async function processProofModeSubmission(
 
   // Score the assessment using existing local logic
   const result = submitProofModeAssessment(input);
-
   if (!result.record) {
-    // Did not pass or not eligible — nothing to persist
+    // Did not pass or not eligible — nothing to persist, no credit consumed
     return result;
+  }
+
+  // Gate issuance on available credits BEFORE writing anything
+  const currentCredits = await getUserCredits(userId);
+  if (currentCredits <= 0) {
+    throw new Error(
+      "You're out of TrustTag credits. Please purchase a plan to continue."
+    );
   }
 
   const assessmentId = await findAssessmentIdBySkillName(result.record.skillName);
@@ -76,6 +105,9 @@ export async function processProofModeSubmission(
     submissionId: submissionRow.id,
     verificationUrl: `https://proofmodepro.com/verify?tagId=${verificationCode}`,
   });
+
+  // Only decrement after successful issuance
+  await decrementUserCredits(userId, currentCredits);
 
   return {
     ...result,
