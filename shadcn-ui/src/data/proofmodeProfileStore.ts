@@ -34,6 +34,13 @@ export type ProofModeEvidenceNote = {
   savedAt: string;
 };
 
+export type ProofModePublicSettings = {
+  slug: string;
+  headline: string;
+  bio: string;
+  isPublic: boolean;
+};
+
 export const emptyResumeData: ProofModeResumeData = {
   fullName: "",
   headline: "",
@@ -57,6 +64,15 @@ async function getCurrentUserId(): Promise<string> {
     throw new Error("No logged-in Supabase user was found.");
   }
   return data.user.id;
+}
+
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
 }
 
 // ---------- Resume ----------
@@ -251,4 +267,55 @@ export async function addJobTrackerEntryToUnifiedProfile(
     status: data.status,
     savedAt: data.created_at,
   };
+}
+
+// ---------- Public profile settings ----------
+
+export async function getPublicSettings(): Promise<ProofModePublicSettings> {
+  const userId = await getCurrentUserId();
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("profile_slug, profile_headline, profile_bio, profile_public")
+    .eq("id", userId)
+    .single();
+
+  if (error || !data) {
+    return { slug: "", headline: "", bio: "", isPublic: false };
+  }
+
+  return {
+    slug: data.profile_slug || "",
+    headline: data.profile_headline || "",
+    bio: data.profile_bio || "",
+    isPublic: !!data.profile_public,
+  };
+}
+
+export async function savePublicSettings(settings: ProofModePublicSettings) {
+  const userId = await getCurrentUserId();
+  const cleanSlug = slugify(settings.slug);
+
+  if (!cleanSlug) {
+    throw new Error("Please enter a profile URL before saving.");
+  }
+
+  const { error } = await supabase
+    .from("users")
+    .update({
+      profile_slug: cleanSlug,
+      profile_headline: settings.headline,
+      profile_bio: settings.bio,
+      profile_public: settings.isPublic,
+    })
+    .eq("id", userId);
+
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error("That profile URL is already taken. Please choose another.");
+    }
+    throw error;
+  }
+
+  return { ...settings, slug: cleanSlug };
 }
