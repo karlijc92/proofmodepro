@@ -1,14 +1,4 @@
-export type ProofModeProfileType =
-  | "regular"
-  | "student"
-  | "business"
-  | "organization";
-
-export type ProofModeSubscriptionStatus =
-  | "none"
-  | "active"
-  | "past_due"
-  | "canceled";
+import { supabase } from "@/lib/supabase";
 
 export type ProofModeResumeData = {
   fullName: string;
@@ -44,19 +34,6 @@ export type ProofModeEvidenceNote = {
   savedAt: string;
 };
 
-export type ProofModeUnifiedProfile = {
-  profileId: string;
-  profileType: ProofModeProfileType;
-  subscriptionStatus: ProofModeSubscriptionStatus;
-  resume: ProofModeResumeData;
-  jobTracker: ProofModeJobTrackerEntry[];
-  careerPlan: ProofModeCareerPlanData;
-  evidenceNotes: ProofModeEvidenceNote[];
-  updatedAt: string;
-};
-
-const PROFILE_STORAGE_KEY = "proofmode_unified_profile";
-
 export const emptyResumeData: ProofModeResumeData = {
   fullName: "",
   headline: "",
@@ -74,122 +51,204 @@ export const emptyCareerPlanData: ProofModeCareerPlanData = {
   nextStep: "",
 };
 
-function createDefaultProfile(): ProofModeUnifiedProfile {
-  return {
-    profileId: "PM-LOCAL-PREVIEW",
-    profileType: "regular",
-    subscriptionStatus: "none",
-    resume: emptyResumeData,
-    jobTracker: [],
-    careerPlan: emptyCareerPlanData,
-    evidenceNotes: [],
-    updatedAt: new Date().toISOString(),
-  };
-}
-
-export function getUnifiedProfile(): ProofModeUnifiedProfile {
-  try {
-    const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
-
-    if (!raw) {
-      const profile = createDefaultProfile();
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-      return profile;
-    }
-
-    const parsed = JSON.parse(raw) as Partial<ProofModeUnifiedProfile>;
-
-    return {
-      ...createDefaultProfile(),
-      ...parsed,
-      resume: {
-        ...emptyResumeData,
-        ...(parsed.resume || {}),
-      },
-      careerPlan: {
-        ...emptyCareerPlanData,
-        ...(parsed.careerPlan || {}),
-      },
-      jobTracker: Array.isArray(parsed.jobTracker) ? parsed.jobTracker : [],
-      evidenceNotes: Array.isArray(parsed.evidenceNotes)
-        ? parsed.evidenceNotes
-        : [],
-      updatedAt: parsed.updatedAt || new Date().toISOString(),
-    };
-  } catch {
-    const profile = createDefaultProfile();
-    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-    return profile;
+async function getCurrentUserId(): Promise<string> {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data?.user) {
+    throw new Error("No logged-in Supabase user was found.");
   }
+  return data.user.id;
 }
 
-export function saveUnifiedProfile(profile: ProofModeUnifiedProfile) {
-  const updatedProfile = {
-    ...profile,
-    updatedAt: new Date().toISOString(),
+// ---------- Resume ----------
+
+export async function getResume(): Promise<ProofModeResumeData> {
+  const userId = await getCurrentUserId();
+
+  const { data, error } = await supabase
+    .from("resumes")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error || !data) return emptyResumeData;
+
+  return {
+    fullName: data.full_name || "",
+    headline: data.headline || "",
+    summary: data.summary || "",
+    skills: data.skills || "",
+    experience: data.experience || "",
+    education: data.education || "",
   };
-
-  localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(updatedProfile));
-  return updatedProfile;
 }
 
-export function updateUnifiedProfile(
-  updater: (profile: ProofModeUnifiedProfile) => ProofModeUnifiedProfile
+export async function saveResumeToUnifiedProfile(resume: ProofModeResumeData) {
+  const userId = await getCurrentUserId();
+
+  const { error } = await supabase.from("resumes").upsert(
+    {
+      user_id: userId,
+      full_name: resume.fullName,
+      headline: resume.headline,
+      summary: resume.summary,
+      skills: resume.skills,
+      experience: resume.experience,
+      education: resume.education,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" }
+  );
+
+  if (error) throw error;
+  return resume;
+}
+
+export async function clearResumeFromUnifiedProfile() {
+  const userId = await getCurrentUserId();
+  const { error } = await supabase.from("resumes").delete().eq("user_id", userId);
+  if (error) throw error;
+  return emptyResumeData;
+}
+
+// ---------- Evidence notes ----------
+
+export async function getEvidenceNotes(): Promise<ProofModeEvidenceNote[]> {
+  const userId = await getCurrentUserId();
+
+  const { data, error } = await supabase
+    .from("evidence_notes")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true });
+
+  if (error || !data) return [];
+
+  return data.map((row) => ({
+    id: row.id,
+    title: row.title,
+    skillArea: row.skill_area || "",
+    description: row.description,
+    savedAt: row.created_at,
+  }));
+}
+
+export async function addEvidenceNoteToUnifiedProfile(
+  note: Omit<ProofModeEvidenceNote, "id" | "savedAt">
 ) {
-  const currentProfile = getUnifiedProfile();
-  const updatedProfile = updater(currentProfile);
-  return saveUnifiedProfile(updatedProfile);
+  const userId = await getCurrentUserId();
+
+  const { data, error } = await supabase
+    .from("evidence_notes")
+    .insert({
+      user_id: userId,
+      title: note.title,
+      skill_area: note.skillArea,
+      description: note.description,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: data.id,
+    title: data.title,
+    skillArea: data.skill_area || "",
+    description: data.description,
+    savedAt: data.created_at,
+  };
 }
 
-export function saveResumeToUnifiedProfile(resume: ProofModeResumeData) {
-  return updateUnifiedProfile((profile) => ({
-    ...profile,
-    resume,
-  }));
+// ---------- Career plan ----------
+
+export async function getCareerPlan(): Promise<ProofModeCareerPlanData> {
+  const userId = await getCurrentUserId();
+
+  const { data, error } = await supabase
+    .from("career_plans")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error || !data) return emptyCareerPlanData;
+
+  return {
+    targetRole: data.target_role || "",
+    currentStrengths: data.current_strengths || "",
+    skillsToBuild: data.skills_to_build || "",
+    trustTagsToEarn: data.trusttags_to_earn || "",
+    nextStep: data.next_step || "",
+    savedAt: data.updated_at,
+  };
 }
 
-export function clearResumeFromUnifiedProfile() {
-  return updateUnifiedProfile((profile) => ({
-    ...profile,
-    resume: emptyResumeData,
-  }));
-}
-
-export function addJobTrackerEntryToUnifiedProfile(
-  entry: ProofModeJobTrackerEntry
-) {
-  return updateUnifiedProfile((profile) => ({
-    ...profile,
-    jobTracker: [...profile.jobTracker, entry],
-  }));
-}
-
-export function saveCareerPlanToUnifiedProfile(
+export async function saveCareerPlanToUnifiedProfile(
   careerPlan: ProofModeCareerPlanData
 ) {
-  return updateUnifiedProfile((profile) => ({
-    ...profile,
-    careerPlan: {
-      ...careerPlan,
-      savedAt: new Date().toISOString(),
+  const userId = await getCurrentUserId();
+
+  const { error } = await supabase.from("career_plans").upsert(
+    {
+      user_id: userId,
+      target_role: careerPlan.targetRole,
+      current_strengths: careerPlan.currentStrengths,
+      skills_to_build: careerPlan.skillsToBuild,
+      trusttags_to_earn: careerPlan.trustTagsToEarn,
+      next_step: careerPlan.nextStep,
+      updated_at: new Date().toISOString(),
     },
+    { onConflict: "user_id" }
+  );
+
+  if (error) throw error;
+  return { ...careerPlan, savedAt: new Date().toISOString() };
+}
+
+// ---------- Job tracker ----------
+
+export async function getJobTrackerEntries(): Promise<ProofModeJobTrackerEntry[]> {
+  const userId = await getCurrentUserId();
+
+  const { data, error } = await supabase
+    .from("job_tracker_entries")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true });
+
+  if (error || !data) return [];
+
+  return data.map((row) => ({
+    id: row.id,
+    jobTitle: row.job_title,
+    company: row.company,
+    status: row.status,
+    savedAt: row.created_at,
   }));
 }
 
-export function addEvidenceNoteToUnifiedProfile(note: Omit<ProofModeEvidenceNote, "id" | "savedAt">) {
-  return updateUnifiedProfile((profile) => ({
-    ...profile,
-    evidenceNotes: [
-      ...profile.evidenceNotes,
-      {
-        ...note,
-        id: `evidence-note-${Date.now()}`,
-        savedAt: new Date().toISOString(),
-      },
-    ],
-  }));
-}
+export async function addJobTrackerEntryToUnifiedProfile(
+  entry: Omit<ProofModeJobTrackerEntry, "id" | "savedAt">
+) {
+  const userId = await getCurrentUserId();
 
-export function clearUnifiedProfile() {
-  localStorage.removeItem(PROFILE_STORAGE_KEY);
+  const { data, error } = await supabase
+    .from("job_tracker_entries")
+    .insert({
+      user_id: userId,
+      job_title: entry.jobTitle,
+      company: entry.company,
+      status: entry.status,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: data.id,
+    jobTitle: data.job_title,
+    company: data.company,
+    status: data.status,
+    savedAt: data.created_at,
+  };
 }
