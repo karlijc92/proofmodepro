@@ -17,18 +17,20 @@ export default function PublicProfile() {
     if (!slug) return;
 
     getPublicProfileBySlug(slug)
-      .then((data) => {
+      .then(function (data) {
         if (!data) {
           setNotFound(true);
         } else {
           setProfile(data);
         }
       })
-      .catch((error) => {
+      .catch(function (error) {
         console.error("Failed to load public profile:", error);
         setNotFound(true);
       })
-      .finally(() => setLoading(false));
+      .finally(function () {
+        setLoading(false);
+      });
   }, [slug]);
 
   return (
@@ -42,9 +44,7 @@ export default function PublicProfile() {
 
         {!loading && notFound && (
           <div className="rounded-2xl border bg-card p-8 text-center">
-            <h1 className="text-2xl font-bold text-foreground">
-              Profile Not Found
-            </h1>
+            <h1 className="text-2xl font-bold text-foreground">Profile Not Found</h1>
             <p className="mt-2 text-muted-foreground">
               This profile does not exist or is not currently public.
             </p>
@@ -79,49 +79,37 @@ export default function PublicProfile() {
             </section>
 
             <section className="mt-6 rounded-2xl border bg-card p-8 shadow-sm">
-              <h2 className="text-xl font-semibold text-foreground">
-                Verified TrustTags
-              </h2>
+              <h2 className="text-xl font-semibold text-foreground">Verified TrustTags</h2>
 
               {profile.trustTags.length === 0 ? (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  No verified TrustTags yet.
-                </p>
+                <p className="mt-3 text-sm text-muted-foreground">No verified TrustTags yet.</p>
               ) : (
                 <div className="mt-5 grid gap-4 md:grid-cols-2">
-                  {profile.trustTags.map((tag) => (
-                    <div
-                      key={tag.verificationCode}
-                      className="rounded-xl border bg-background p-4 text-sm"
-                    >
-                      <p className="font-semibold text-foreground">
-                        {tag.skillName}
-                      </p>
-                      <p className="mt-1 text-muted-foreground">
-                        Score: {tag.score}%
-                      </p>
-                      <p className="mt-1 text-muted-foreground">
-                        Issued: {new Date(tag.issuedAt).toLocaleDateString()}
-                      </p>
-                      
-                        href={tag.verificationUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-3 inline-block text-sm font-medium text-primary underline"
-                      >
-                        Verify this TrustTag
-                      </a>
-                    </div>
-                  ))}
+                  {profile.trustTags.map(function (tag) {
+                    return (
+                      <div key={tag.verificationCode} className="rounded-xl border bg-background p-4 text-sm">
+                        <p className="font-semibold text-foreground">{tag.skillName}</p>
+                        <p className="mt-1 text-muted-foreground">Score: {tag.score}%</p>
+                        <p className="mt-1 text-muted-foreground">
+                          Issued: {new Date(tag.issuedAt).toLocaleDateString()}
+                        </p>
+                        
+                          href={tag.verificationUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-3 inline-block text-sm font-medium text-primary underline"
+                        >
+                          Verify this TrustTag
+                        </a>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </section>
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
-              Powered by{" "}
-              <Link to="/" className="font-medium text-primary underline">
-                ProofMode
-              </Link>
+              Powered by <Link to="/" className="font-medium text-primary underline">ProofMode</Link>
             </p>
           </div>
         )}
