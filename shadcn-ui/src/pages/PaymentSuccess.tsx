@@ -13,17 +13,46 @@ import {
 } from "@/data/proofmodeStore";
 
 import { processProofModeSubmission } from "@/data/proofmodeProcessor";
+import { supabase } from "@/lib/supabase";
 
 import { ProofModeAnswerMap } from "@/data/proofmodeScoring";
-
 import { ProofModeEvidenceItem } from "@/data/proofmodeRecords";
 
 import { CheckCircle, AlertCircle } from "lucide-react";
+
+const CREDIT_POLL_INTERVAL_MS = 2000;
+const CREDIT_POLL_MAX_ATTEMPTS = 8; // ~16 seconds total
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForCredits(): Promise<boolean> {
+  for (let attempt = 0; attempt < CREDIT_POLL_MAX_ATTEMPTS; attempt++) {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) return false;
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("trusttag_credits")
+      .eq("id", userData.user.id)
+      .single();
+
+    if (!error && data && (data.trusttag_credits || 0) > 0) {
+      return true;
+    }
+
+    await sleep(CREDIT_POLL_INTERVAL_MS);
+  }
+
+  return false;
+}
 
 export default function PaymentSuccessPage() {
   const navigate = useNavigate();
 
   const [processing, setProcessing] = useState(true);
+  const [waitingOnPayment, setWaitingOnPayment] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [createdCount, setCreatedCount] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -34,6 +63,20 @@ export default function PaymentSuccessPage() {
         const pending = await getPendingAssessment();
 
         if (!pending || !pending.passed) {
+          setProcessing(false);
+          return;
+        }
+
+        // Give the Stripe webhook a chance to grant credits before we try
+        // to issue the TrustTag — payment confirmation is asynchronous.
+        setWaitingOnPayment(true);
+        const creditsReady = await waitForCredits();
+        setWaitingOnPayment(false);
+
+        if (!creditsReady) {
+          setErrorMessage(
+            "We're still confirming your payment. This can take a minute — please refresh this page shortly, or contact support if it doesn't resolve."
+          );
           setProcessing(false);
           return;
         }
@@ -107,9 +150,11 @@ export default function PaymentSuccessPage() {
 
               <CardTitle className="text-3xl mt-4">
                 {processing
-                  ? "Finalizing Your TrustTag"
+                  ? waitingOnPayment
+                    ? "Confirming Your Payment"
+                    : "Finalizing Your TrustTag"
                   : errorMessage
-                  ? "Something Went Wrong"
+                  ? "Almost There"
                   : completed
                   ? "TrustTag Created Successfully"
                   : "No Pending Assessment Found"}
@@ -119,7 +164,9 @@ export default function PaymentSuccessPage() {
             <CardContent className="space-y-6">
               {processing && (
                 <p className="text-gray-600">
-                  Please wait while we finalize your verified credential.
+                  {waitingOnPayment
+                    ? "We're confirming your payment with Stripe. This usually only takes a few seconds."
+                    : "Please wait while we finalize your verified credential."}
                 </p>
               )}
 
@@ -127,11 +174,18 @@ export default function PaymentSuccessPage() {
                 <>
                   <p className="text-gray-600">{errorMessage}</p>
                   <p className="text-sm text-gray-500">
-                    If you were just charged, contact support at
+                    If this doesn't resolve in a few minutes, contact support at
                     proofmodepro365@gmail.com so we can manually issue your
                     TrustTag.
                   </p>
-                  <Button className="w-full" onClick={() => navigate("/contact")}>
+                  <Button className="w-full" onClick={() => window.location.reload()}>
+                    Refresh This Page
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => navigate("/contact")}
+                  >
                     Contact Support
                   </Button>
                 </>
