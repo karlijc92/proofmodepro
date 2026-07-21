@@ -6,6 +6,7 @@ import { CheckCircle, XCircle, Award } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { savePendingAssessment } from '@/data/proofmodeStore';
+import { trustTagRules } from '@/data/proofmodeConfig';
 
 interface AssessmentAnswer {
   questionId: string;
@@ -69,7 +70,9 @@ export default function AssessmentResultsPage() {
   }, [answers, assessment.questions]);
 
   const score = Math.round((correctAnswersCount / assessment.questions.length) * 100);
-  const passed = score >= 80;
+  const passed = score >= trustTagRules.passingScorePercent;
+  const evidenceCount = (uploadedEvidence || []).length;
+  const hasMinimumEvidence = evidenceCount >= trustTagRules.minimumEvidenceUploads;
 
   const handleContinueToPricing = () => {
     const skillCodes = (assessment.id || id || '')
@@ -125,9 +128,16 @@ export default function AssessmentResultsPage() {
                     🎉 You passed this assessment
                   </p>
 
-                  <p className="mt-2 text-gray-600">
-                    You qualify for a verified TrustTag.
-                  </p>
+                  {hasMinimumEvidence ? (
+                    <p className="mt-2 text-gray-600">
+                      You qualify for a verified TrustTag.
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-amber-600">
+                      You still need to upload proof of your work before your
+                      TrustTag can be marked as fully verified.
+                    </p>
+                  )}
 
                   <div className="mt-6 space-y-3">
                     <Button className="w-full" onClick={handleContinueToPricing}>
@@ -135,13 +145,15 @@ export default function AssessmentResultsPage() {
                     </Button>
 
                     <p className="text-xs text-gray-500">
-                      One-time fee required to generate your verified credential
+                      One-time fee required to generate your verified credential.
+                      {!hasMinimumEvidence &&
+                        " Your TrustTag will show as pending until proof is uploaded."}
                     </p>
                   </div>
                 </>
               ) : (
                 <p className="mt-4 text-red-600 font-semibold">
-                  You did not pass. A score of 80% or higher is required.
+                  You did not pass. A score of {trustTagRules.passingScorePercent}% or higher is required.
                 </p>
               )}
 
