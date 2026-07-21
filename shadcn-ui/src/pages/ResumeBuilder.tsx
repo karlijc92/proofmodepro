@@ -106,7 +106,7 @@ export default function ResumeBuilder() {
                     value={resume.summary}
                     onChange={(value) => updateField("summary", value)}
                     placeholder="Example: Reliable hands-on worker with experience in home repair, customer service, and problem solving. Strong record of completing tasks, learning quickly, and working well with others."
-                    help="Write 2–4 sentences about your strengths, work style, experience, and goals."
+                    help="Write 2-4 sentences about your strengths, work style, experience, and goals."
                   />
 
                   <ResumeTextArea
@@ -118,3 +118,194 @@ export default function ResumeBuilder() {
                   />
 
                   <ResumeTextArea
+                    label="Experience"
+                    value={resume.experience}
+                    onChange={(value) => updateField("experience", value)}
+                    placeholder="Example: Freelance Repair Work, 2022-Present. Completed small home repair projects for clients. Communicated timelines, pricing, and project needs. Maintained quality and safety standards."
+                    help="Include jobs, freelance work, volunteer work, family business work, projects, internships, or hands-on experience."
+                  />
+
+                  <ResumeTextArea
+                    label="Education / Training"
+                    value={resume.education}
+                    onChange={(value) => updateField("education", value)}
+                    placeholder="Example: High school diploma, trade school, online courses, certifications, workshops, self-taught training"
+                    help="Add school, training, certificates, online learning, or informal skill-building."
+                  />
+
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Button onClick={saveResume}>Save Resume to Profile</Button>
+                    <Button variant="outline" onClick={clearResume}>
+                      Clear Resume
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <aside className="rounded-2xl border bg-background p-6 shadow-sm">
+                <h2 className="text-xl font-semibold text-foreground">
+                  Writing Help
+                </h2>
+
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Strong resumes use clear, simple proof of what you can do.
+                </p>
+
+                <div className="mt-5 space-y-4 text-sm">
+                  <TipCard
+                    title="Use action words"
+                    text="Try words like managed, repaired, assisted, organized, trained, built, cleaned, solved, tracked, supported, or completed."
+                  />
+
+                  <TipCard
+                    title="Include proof"
+                    text="Mention numbers when possible: customers helped, projects completed, years of experience, tools used, or results improved."
+                  />
+
+                  <TipCard
+                    title="Informal work counts"
+                    text="Freelance work, family business work, caregiving, repairs, tutoring, community work, and unpaid projects can still show real skills."
+                  />
+
+                  <TipCard
+                    title="ProofMode advantage"
+                    text="Later, verified TrustTags can be added automatically so your resume shows proof instead of only claims."
+                  />
+                </div>
+              </aside>
+            </section>
+
+            <section className="mt-8 rounded-2xl border bg-background p-6 shadow-sm">
+              <h2 className="text-xl font-semibold text-foreground">
+                Resume Preview
+              </h2>
+
+              <p className="mt-2 text-sm text-muted-foreground">
+                This is the saved profile version users can keep improving over
+                time.
+              </p>
+
+              <div className="mt-6 rounded-2xl border bg-card p-5">
+                <h3 className="text-2xl font-bold text-foreground">
+                  {resume.fullName || "Your Name"}
+                </h3>
+
+                <p className="mt-2 text-sm font-medium text-primary">
+                  {resume.headline || "Your resume headline will appear here"}
+                </p>
+
+                <PreviewSection
+                  title="Professional Summary"
+                  text={resume.summary}
+                  emptyText="Your summary will appear here."
+                />
+
+                <PreviewSection
+                  title="Skills"
+                  text={resume.skills}
+                  emptyText="Your skills will appear here."
+                />
+
+                <PreviewSection
+                  title="Experience"
+                  text={resume.experience}
+                  emptyText="Your experience will appear here."
+                />
+
+                <PreviewSection
+                  title="Education / Training"
+                  text={resume.education}
+                  emptyText="Your education or training will appear here."
+                />
+              </div>
+            </section>
+          </>
+        )}
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
+
+function ResumeInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+  help,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  help: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-medium text-foreground">{label}</span>
+      <p className="mt-1 text-xs text-muted-foreground">{help}</p>
+      <input
+        className="mt-2 w-full rounded-xl border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+      />
+    </label>
+  );
+}
+
+function ResumeTextArea({
+  label,
+  value,
+  onChange,
+  placeholder,
+  help,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  help: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-medium text-foreground">{label}</span>
+      <p className="mt-1 text-xs text-muted-foreground">{help}</p>
+      <textarea
+        className="mt-2 min-h-32 w-full rounded-xl border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+      />
+    </label>
+  );
+}
+
+function TipCard({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-xl border bg-card p-4">
+      <h3 className="font-semibold text-foreground">{title}</h3>
+      <p className="mt-2 text-muted-foreground">{text}</p>
+    </div>
+  );
+}
+
+function PreviewSection({
+  title,
+  text,
+  emptyText,
+}: {
+  title: string;
+  text: string;
+  emptyText: string;
+}) {
+  return (
+    <div className="mt-5 border-t pt-4">
+      <h4 className="font-semibold text-foreground">{title}</h4>
+      <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
+        {text || emptyText}
+      </p>
+    </div>
+  );
+}
