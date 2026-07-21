@@ -185,8 +185,12 @@ export default function CreateTrustTagPage() {
               onClick={handleStartAssessment}
               disabled={availableSelectedCount === 0}
             >
-              Continue to Optional Proof Upload ({availableSelectedCount} selected)
+              Continue to Proof Upload ({availableSelectedCount} selected)
             </Button>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Uploading proof is required for your TrustTag to be fully verified.
+              Skipping it will leave your TrustTag pending until evidence is added.
+            </p>
           </div>
         </div>
       </main>
