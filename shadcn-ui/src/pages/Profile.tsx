@@ -30,13 +30,18 @@ const tabs: { id: ProfileTab; label: string }[] = [
 export default function Profile() {
   const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
   const [trustTags, setTrustTags] = useState<SupabaseTrustTagRow[]>([]);
+  const [loadingTags, setLoadingTags] = useState(true);
 
   useEffect(() => {
     getAllTrustTagsForCurrentUser()
-      .then(setTrustTags)
+      .then((records) => {
+        setTrustTags(records);
+        setLoadingTags(false);
+      })
       .catch((error) => {
         console.error("Failed to load TrustTags:", error);
         setTrustTags([]);
+        setLoadingTags(false);
       });
   }, []);
 
@@ -78,11 +83,11 @@ export default function Profile() {
         <section className="mt-6 grid gap-4 md:grid-cols-3">
           <StatusCard
             label="TrustTags"
-            value={trustTagCount > 0 ? String(trustTagCount) : "None yet"}
+            value={loadingTags ? "Loading..." : trustTagCount > 0 ? String(trustTagCount) : "None yet"}
           />
           <StatusCard
             label="Verified Skills"
-            value={verifiedSkillCount > 0 ? String(verifiedSkillCount) : "None yet"}
+            value={loadingTags ? "Loading..." : verifiedSkillCount > 0 ? String(verifiedSkillCount) : "None yet"}
           />
           <StatusCard label="Profile Type" value="Regular" />
         </section>
@@ -106,8 +111,12 @@ export default function Profile() {
         </section>
 
         <section className="mt-8 rounded-2xl border bg-card p-6 shadow-sm">
-          {activeTab === "overview" && <OverviewTab />}
-          {activeTab === "trusttags" && <TrustTagsTab />}
+          {activeTab === "overview" && (
+            <OverviewTab trustTags={trustTags} loadingTags={loadingTags} />
+          )}
+          {activeTab === "trusttags" && (
+            <TrustTagsTab trustTags={trustTags} loadingTags={loadingTags} />
+          )}
           {activeTab === "job-tools" && <JobToolsTab />}
           {activeTab === "student" && <StudentTab />}
           {activeTab === "business" && <BusinessTab />}
@@ -121,7 +130,30 @@ export default function Profile() {
   );
 }
 
-function OverviewTab() {
+function OverviewTab({
+  trustTags,
+  loadingTags,
+}: {
+  trustTags: SupabaseTrustTagRow[];
+  loadingTags: boolean;
+}) {
+  const verifiedCount = trustTags.filter((t) => t.status === "verified").length;
+
+  const walletText = loadingTags
+    ? "Loading your TrustTags..."
+    : trustTags.length === 0
+    ? "No TrustTags have been added yet."
+    : `You have ${trustTags.length} TrustTag${trustTags.length === 1 ? "" : "s"} on file.`;
+
+  const skillsText = loadingTags
+    ? "Loading your verified skills..."
+    : verifiedCount === 0
+    ? "Your verified skills will appear here after completed TrustTags are issued."
+    : `${verifiedCount} verified skill${verifiedCount === 1 ? "" : "s"}: ${trustTags
+        .filter((t) => t.status === "verified")
+        .map((t) => t.skill_name)
+        .join(", ")}`;
+
   return (
     <div>
       <SectionHeader
@@ -130,8 +162,8 @@ function OverviewTab() {
       />
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
-        <DashboardCard title="TrustTag Wallet" text="No TrustTags have been added yet." action="View TrustTag Wallet" route="/profile-preview" />
-        <DashboardCard title="Verified Skills" text="Your verified skills will appear here after completed TrustTags are issued." action="View Verified Skills" route="/profile-preview" />
+        <DashboardCard title="TrustTag Wallet" text={walletText} action="View TrustTag Wallet" route="/profile-preview" />
+        <DashboardCard title="Verified Skills" text={skillsText} action="View Verified Skills" route="/profile-preview" />
         <DashboardCard title="Evidence / Documents" text="Uploaded work samples, photos, documents, or proof files will be organized here." action="Open Evidence Manager" route="/profile/evidence-manager" />
         <DashboardCard title="Career Snapshot" text="Use this section to prepare your profile for employers, clients, schools, or workforce programs." action="Open Career Snapshot" route="/profile/career-plan" />
       </div>
@@ -139,17 +171,61 @@ function OverviewTab() {
   );
 }
 
-function TrustTagsTab() {
+function TrustTagsTab({
+  trustTags,
+  loadingTags,
+}: {
+  trustTags: SupabaseTrustTagRow[];
+  loadingTags: boolean;
+}) {
+  const now = new Date();
+
+  const active = trustTags.filter(
+    (t) => t.status === "verified" && (!t.expires_at || new Date(t.expires_at) > now)
+  );
+  const pending = trustTags.filter((t) => t.status === "pending_review");
+  const needsEvidence = trustTags.filter((t) => t.status === "needs_more_evidence");
+  const expired = trustTags.filter(
+    (t) => t.status === "verified" && t.expires_at && new Date(t.expires_at) <= now
+  );
+
+  const describe = (label: string, list: SupabaseTrustTagRow[], emptyText: string) =>
+    loadingTags
+      ? `Loading ${label.toLowerCase()}...`
+      : list.length === 0
+      ? emptyText
+      : `${list.length}: ${list.map((t) => t.skill_name).join(", ")}`;
+
   return (
     <div>
       <SectionHeader title="TrustTags" text="Create, store, and manage skill-based TrustTags connected to your profile." />
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <DashboardCard title="Create New TrustTag" text="Start a new skill verification and unlock a TrustTag after passing." action="Create TrustTag" route="/create-trust-tag" />
-        <DashboardCard title="Active TrustTags" text="No active TrustTags yet." action="View Active TrustTags" route="/profile-preview" />
-        <DashboardCard title="Pending TrustTags" text="TrustTags waiting for payment, review, or evidence will appear here." action="View Pending TrustTags" route="/profile-preview" />
-        <DashboardCard title="Needs More Evidence" text="TrustTags that need more proof will appear here." action="Open Evidence Manager" route="/profile/evidence-manager" />
-        <DashboardCard title="Expired TrustTags" text="Expired TrustTags will appear here so they can be renewed if needed." action="View Expired TrustTags" route="/profile-preview" />
+        <DashboardCard
+          title="Active TrustTags"
+          text={describe("active TrustTags", active, "No active TrustTags yet.")}
+          action="View Active TrustTags"
+          route="/profile-preview"
+        />
+        <DashboardCard
+          title="Pending TrustTags"
+          text={describe("pending TrustTags", pending, "TrustTags waiting for payment, review, or evidence will appear here.")}
+          action="View Pending TrustTags"
+          route="/profile-preview"
+        />
+        <DashboardCard
+          title="Needs More Evidence"
+          text={describe("TrustTags needing evidence", needsEvidence, "TrustTags that need more proof will appear here.")}
+          action="Open Evidence Manager"
+          route="/profile/evidence-manager"
+        />
+        <DashboardCard
+          title="Expired TrustTags"
+          text={describe("expired TrustTags", expired, "Expired TrustTags will appear here so they can be renewed if needed.")}
+          action="View Expired TrustTags"
+          route="/profile-preview"
+        />
       </div>
     </div>
   );
