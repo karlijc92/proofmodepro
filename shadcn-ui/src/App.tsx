@@ -11,6 +11,7 @@ import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import ProfilePreview from "./pages/ProfilePreview";
+import PublicProfile from "./pages/PublicProfile";
 import Verify from "./pages/Verify";
 import Partnership from "./pages/Partnership";
 import Pricing from "./pages/Pricing";
@@ -112,6 +113,7 @@ const App = () => (
           />
 
           <Route path="/profile-preview" element={<ProfilePreview />} />
+          <Route path="/u/:slug" element={<PublicProfile />} />
           <Route path="/verify" element={<Verify />} />
           <Route path="/partnership" element={<Partnership />} />
           <Route path="/pricing" element={<Pricing />} />
