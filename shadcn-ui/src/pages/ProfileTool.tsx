@@ -56,12 +56,7 @@ const rolePlayScenarios = [
   "An employer asks you to explain a gap or informal work history.",
 ];
 
-type QuizAnswer =
-  | "hands-on"
-  | "people"
-  | "detail"
-  | "creative"
-  | "leadership";
+type QuizAnswer = "hands-on" | "people" | "detail" | "creative" | "leadership";
 
 const quizQuestions = [
   {
@@ -214,23 +209,11 @@ export default function ProfileTool() {
   );
 }
 
-function ToolHeader({
-  label,
-  title,
-  description,
-}: {
-  label: string;
-  title: string;
-  description: string;
-}) {
+function ToolHeader({ label, title, description }: { label: string; title: string; description: string }) {
   return (
     <section className="rounded-2xl border bg-card p-6 shadow-sm">
       <p className="text-sm font-medium text-primary">{label}</p>
-
-      <h1 className="mt-2 text-3xl font-bold text-foreground md:text-4xl">
-        {title}
-      </h1>
-
+      <h1 className="mt-2 text-3xl font-bold text-foreground md:text-4xl">{title}</h1>
       <p className="mt-3 max-w-3xl text-muted-foreground">{description}</p>
     </section>
   );
@@ -241,30 +224,4 @@ function EvidenceManager() {
   const [skillArea, setSkillArea] = useState("");
   const [description, setDescription] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
-  const [savedEvidence, setSavedEvidence] = useState<ProofModeEvidenceNote[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  async function refreshEvidence() {
-    try {
-      const notes = await getEvidenceNotes();
-      setSavedEvidence(notes);
-    } catch (error) {
-      console.error("Failed to load evidence notes:", error);
-      setSavedEvidence([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    refreshEvidence();
-  }, []);
-
-  async function saveEvidenceNote() {
-    if (!title.trim() || !description.trim()) {
-      setSavedMessage("Please add a title and description first.");
-      return;
-    }
-
-    try {
-      await addEvidenceNoteToUnifiedProfile({
+  const
