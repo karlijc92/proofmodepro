@@ -15,14 +15,7 @@ import {
   ProofModeEvidenceNote,
 } from "@/data/proofmodeProfileStore";
 
-type ToolKey =
-  | "evidence"
-  | "interview"
-  | "roleplay"
-  | "quizzes"
-  | "tracker"
-  | "career"
-  | "default";
+type ToolKey = "evidence" | "interview" | "roleplay" | "quizzes" | "tracker" | "career" | "default";
 
 const routeToTool: Record<string, ToolKey> = {
   "/profile/evidence-manager": "evidence",
@@ -177,10 +170,7 @@ export default function ProfileTool() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const tool = useMemo<ToolKey>(
-    () => routeToTool[location.pathname] || "default",
-    [location.pathname]
-  );
+  const tool = useMemo<ToolKey>(() => routeToTool[location.pathname] || "default", [location.pathname]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -197,10 +187,7 @@ export default function ProfileTool() {
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Button onClick={() => navigate("/profile")}>Back to Profile</Button>
-
-          <Button variant="outline" onClick={() => navigate("/pricing")}>
-            Upgrade for Advanced Tools
-          </Button>
+          <Button variant="outline" onClick={() => navigate("/pricing")}>Upgrade for Advanced Tools</Button>
         </div>
       </main>
 
@@ -224,4 +211,366 @@ function EvidenceManager() {
   const [skillArea, setSkillArea] = useState("");
   const [description, setDescription] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
-  const
+  const [savedEvidence, setSavedEvidence] = useState<ProofModeEvidenceNote[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function refreshEvidence() {
+    try {
+      const notes = await getEvidenceNotes();
+      setSavedEvidence(notes);
+    } catch (error) {
+      console.error("Failed to load evidence notes:", error);
+      setSavedEvidence([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    refreshEvidence();
+  }, []);
+
+  async function saveEvidenceNote() {
+    if (!title.trim() || !description.trim()) {
+      setSavedMessage("Please add a title and description first.");
+      return;
+    }
+
+    try {
+      await addEvidenceNoteToUnifiedProfile({ title: title, skillArea: skillArea, description: description });
+      setSavedMessage("Evidence note saved to your profile.");
+      setTitle("");
+      setSkillArea("");
+      setDescription("");
+      await refreshEvidence();
+    } catch (error) {
+      console.error("Failed to save evidence note:", error);
+      setSavedMessage("Something went wrong saving this note. Please try again.");
+    }
+  }
+
+  return (
+    <>
+      <ToolHeader label="Profile Tool" title="Evidence Manager" description="Organize proof, work samples, documents, photos, and notes that support your real skills." />
+
+      <section className="mt-8 grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">Add Evidence Notes</h2>
+
+          <div className="mt-5 space-y-4">
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Evidence title" className="w-full rounded-xl border bg-background p-4 text-sm" />
+            <input value={skillArea} onChange={(e) => setSkillArea(e.target.value)} placeholder="Skill area" className="w-full rounded-xl border bg-background p-4 text-sm" />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe what this evidence proves..." className="w-full rounded-xl border bg-background p-4 text-sm" rows={6} />
+            <Button onClick={saveEvidenceNote}>Save Evidence Note</Button>
+            {savedMessage && <p className="text-sm font-medium text-primary">{savedMessage}</p>}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border bg-background p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">Saved Evidence Notes</h2>
+
+          <div className="mt-5 space-y-3">
+            {loading ? (
+              <p className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">Loading evidence notes...</p>
+            ) : savedEvidence.length === 0 ? (
+              <p className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">No saved evidence notes yet.</p>
+            ) : (
+              savedEvidence.map((item) => (
+                <div key={item.id} className="rounded-xl border bg-card p-4 text-sm">
+                  <p className="font-semibold text-foreground">{item.title}</p>
+                  <p className="mt-1 text-muted-foreground">{item.skillArea || "No skill area entered"}</p>
+                  <p className="mt-3 text-foreground">{item.description}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-2xl border bg-background p-6 shadow-sm">
+        <h2 className="text-xl font-semibold text-foreground">Evidence Checklist</h2>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {[
+            "What skill does this prove?",
+            "Is the evidence clear and easy to understand?",
+            "Does it show real work or real experience?",
+            "Could an employer or reviewer understand it quickly?",
+          ].map((item) => (
+            <div key={item} className="rounded-xl border bg-card p-4 text-sm font-medium">{item}</div>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+
+function InterviewPrep() {
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [answer, setAnswer] = useState("");
+  const [feedback, setFeedback] = useState("");
+
+  function reviewAnswer() {
+    setFeedback(buildInterviewFeedback(answer));
+  }
+
+  function nextQuestion() {
+    setQuestionIndex((current) => (current + 1) % interviewQuestions.length);
+    setAnswer("");
+    setFeedback("");
+  }
+
+  return (
+    <>
+      <ToolHeader label="Job Tool" title="Interview Prep" description="Practice interview questions and improve your responses." />
+
+      <section className="mt-8 rounded-2xl border bg-card p-6 shadow-sm">
+        <h2 className="text-xl font-semibold text-foreground">Mock Interview Question</h2>
+        <p className="mt-4 rounded-xl border bg-background p-4 text-sm font-medium">{interviewQuestions[questionIndex]}</p>
+        <textarea value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Type your answer..." className="mt-5 w-full rounded-xl border bg-background p-4 text-sm" rows={7} />
+
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+          <Button onClick={reviewAnswer}>Review My Answer</Button>
+          <Button variant="outline" onClick={nextQuestion}>Next Question</Button>
+        </div>
+
+        {feedback && (
+          <div className="mt-5 rounded-xl border bg-background p-4 text-sm">
+            <p className="font-semibold text-foreground">Feedback</p>
+            <p className="mt-2 text-muted-foreground">{feedback}</p>
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
+
+function RolePlayPractice() {
+  const [scenarioIndex, setScenarioIndex] = useState(0);
+  const [response, setResponse] = useState("");
+  const [feedback, setFeedback] = useState("");
+
+  function reviewResponse() {
+    setFeedback(buildRolePlayFeedback(response));
+  }
+
+  function nextScenario() {
+    setScenarioIndex((current) => (current + 1) % rolePlayScenarios.length);
+    setResponse("");
+    setFeedback("");
+  }
+
+  return (
+    <>
+      <ToolHeader label="Job Tool" title="Role Play Practice" description="Practice workplace communication scenarios." />
+
+      <section className="mt-8 rounded-2xl border bg-card p-6 shadow-sm">
+        <p className="rounded-xl border bg-background p-4 text-sm font-medium">{rolePlayScenarios[scenarioIndex]}</p>
+        <textarea value={response} onChange={(e) => setResponse(e.target.value)} placeholder="Type your response..." className="mt-5 w-full rounded-xl border bg-background p-4 text-sm" rows={7} />
+
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+          <Button onClick={reviewResponse}>Review My Response</Button>
+          <Button variant="outline" onClick={nextScenario}>Next Scenario</Button>
+        </div>
+
+        {feedback && (
+          <div className="mt-5 rounded-xl border bg-background p-4 text-sm">
+            <p className="font-semibold text-foreground">Feedback</p>
+            <p className="mt-2 text-muted-foreground">{feedback}</p>
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
+
+function SkillQuizzes() {
+  const [answers, setAnswers] = useState<Record<number, QuizAnswer>>({});
+
+  return (
+    <>
+      <ToolHeader label="Job Tool" title="Skill & Career Quizzes" description="Understand your strengths and career fit." />
+
+      <section className="mt-8 rounded-2xl border bg-card p-6 shadow-sm">
+        {quizQuestions.map((item, index) => (
+          <div key={item.question} className="mb-6 rounded-xl border bg-background p-4">
+            <p className="text-sm font-semibold text-foreground">{item.question}</p>
+
+            <div className="mt-3 space-y-2">
+              {item.options.map((option) => (
+                <label key={option.label} className="flex cursor-pointer gap-3 rounded-lg border bg-card p-3 text-sm">
+                  <input type="radio" name={"quiz-" + index} checked={answers[index] === option.value} onChange={() => setAnswers((current) => ({ ...current, [index]: option.value as QuizAnswer }))} />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
+      </section>
+    </>
+  );
+}
+
+function JobTracker() {
+  const [jobTitle, setJobTitle] = useState("");
+  const [company, setCompany] = useState("");
+  const [status, setStatus] = useState("Interested");
+  const [savedMessage, setSavedMessage] = useState("");
+  const [savedJobs, setSavedJobs] = useState<ProofModeJobTrackerEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function refreshJobs() {
+    try {
+      const jobs = await getJobTrackerEntries();
+      setSavedJobs(jobs);
+    } catch (error) {
+      console.error("Failed to load job tracker entries:", error);
+      setSavedJobs([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    refreshJobs();
+  }, []);
+
+  async function saveJobEntry() {
+    if (!jobTitle.trim() || !company.trim()) {
+      setSavedMessage("Please add a job title and company first.");
+      return;
+    }
+
+    try {
+      await addJobTrackerEntryToUnifiedProfile({ jobTitle: jobTitle, company: company, status: status });
+      setSavedMessage("Job entry saved to your profile.");
+      setJobTitle("");
+      setCompany("");
+      setStatus("Interested");
+      await refreshJobs();
+    } catch (error) {
+      console.error("Failed to save job entry:", error);
+      setSavedMessage("Something went wrong saving this entry. Please try again.");
+    }
+  }
+
+  return (
+    <>
+      <ToolHeader label="Job Tool" title="Job Search Tracker" description="Track job leads, applications, interviews, and follow-ups." />
+
+      <section className="mt-8 grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border bg-card p-6 shadow-sm">
+          <div className="space-y-4">
+            <input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="Job title" className="w-full rounded-xl border bg-background p-4 text-sm" />
+            <input value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Company" className="w-full rounded-xl border bg-background p-4 text-sm" />
+
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl border bg-background p-4 text-sm">
+              <option>Interested</option>
+              <option>Applied</option>
+              <option>Interview Scheduled</option>
+              <option>Follow Up Needed</option>
+              <option>Offer Received</option>
+              <option>Not Selected</option>
+            </select>
+
+            <Button onClick={saveJobEntry}>Save to Profile</Button>
+            {savedMessage && <p className="text-sm font-medium text-primary">{savedMessage}</p>}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border bg-background p-6 shadow-sm">
+          <p className="text-sm text-muted-foreground">{loading ? "Loading..." : "Saved entries: " + savedJobs.length}</p>
+
+          <div className="mt-5 space-y-3">
+            {!loading && savedJobs.length === 0 ? (
+              <p className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">No saved jobs yet.</p>
+            ) : (
+              savedJobs.map((job) => (
+                <div key={job.id} className="rounded-xl border bg-card p-4 text-sm">
+                  <p className="font-semibold text-foreground">{job.jobTitle}</p>
+                  <p className="mt-1 text-muted-foreground">{job.company}</p>
+                  <p className="mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground">{job.status}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function CareerPlan() {
+  const [targetRole, setTargetRole] = useState("");
+  const [currentStrengths, setCurrentStrengths] = useState("");
+  const [skillsToBuild, setSkillsToBuild] = useState("");
+  const [trustTagsToEarn, setTrustTagsToEarn] = useState("");
+  const [nextStep, setNextStep] = useState("");
+  const [savedMessage, setSavedMessage] = useState("");
+
+  useEffect(() => {
+    getCareerPlan()
+      .then((plan) => {
+        setTargetRole(plan.targetRole || "");
+        setCurrentStrengths(plan.currentStrengths || "");
+        setSkillsToBuild(plan.skillsToBuild || "");
+        setTrustTagsToEarn(plan.trustTagsToEarn || "");
+        setNextStep(plan.nextStep || "");
+      })
+      .catch((error) => console.error("Failed to load career plan:", error));
+  }, []);
+
+  async function saveCareerPlan() {
+    try {
+      await saveCareerPlanToUnifiedProfile({
+        targetRole: targetRole,
+        currentStrengths: currentStrengths,
+        skillsToBuild: skillsToBuild,
+        trustTagsToEarn: trustTagsToEarn,
+        nextStep: nextStep,
+      });
+      setSavedMessage("Career plan saved to your profile.");
+    } catch (error) {
+      console.error("Failed to save career plan:", error);
+      setSavedMessage("Something went wrong saving your plan. Please try again.");
+    }
+  }
+
+  return (
+    <>
+      <ToolHeader label="Job Tool" title="Career Plan" description="Build a simple career snapshot that connects your goals, strengths, skills, TrustTags, and next steps." />
+
+      <section className="mt-8 grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border bg-card p-6 shadow-sm">
+          <div className="mt-5 space-y-4">
+            <input value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder="Target role" className="w-full rounded-xl border bg-background p-4 text-sm" />
+            <textarea value={currentStrengths} onChange={(e) => setCurrentStrengths(e.target.value)} placeholder="Current strengths" className="w-full rounded-xl border bg-background p-4 text-sm" rows={3} />
+            <textarea value={skillsToBuild} onChange={(e) => setSkillsToBuild(e.target.value)} placeholder="Skills to build" className="w-full rounded-xl border bg-background p-4 text-sm" rows={3} />
+            <textarea value={trustTagsToEarn} onChange={(e) => setTrustTagsToEarn(e.target.value)} placeholder="TrustTags to earn" className="w-full rounded-xl border bg-background p-4 text-sm" rows={3} />
+            <textarea value={nextStep} onChange={(e) => setNextStep(e.target.value)} placeholder="Next step" className="w-full rounded-xl border bg-background p-4 text-sm" rows={3} />
+            <Button onClick={saveCareerPlan}>Save to Profile</Button>
+            {savedMessage && <p className="text-sm font-medium text-primary">{savedMessage}</p>}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border bg-background p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">Career Snapshot</h2>
+
+          <div className="mt-5 rounded-xl border bg-card p-4 text-sm">
+            <p><strong>Target:</strong> {targetRole || "Not entered yet"}</p>
+            <p className="mt-3"><strong>Strengths:</strong> {currentStrengths || "Not entered yet"}</p>
+            <p className="mt-3"><strong>Skills to Build:</strong> {skillsToBuild || "Not entered yet"}</p>
+            <p className="mt-3"><strong>TrustTags / Proof:</strong> {trustTagsToEarn || "Not entered yet"}</p>
+            <p className="mt-3"><strong>Next Step:</strong> {nextStep || "Not entered yet"}</p>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function DefaultTool() {
+  return (
+    <ToolHeader label="Profile Tool" title="Profile Tool" description="Use this section to strengthen your ProofMode profile and prepare for better opportunities." />
+  );
+}
